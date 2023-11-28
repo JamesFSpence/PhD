@@ -1,0 +1,92 @@
+theory GreenExercises
+  imports Green
+begin
+
+lemma cube_plus_twotimes_deriv :
+  assumes "a\<le>b" 
+  shows "integral {a..b} (\<lambda>x::real. x^2 + 2*x) = integral {a..b} (\<lambda>x. x^2) + integral {a..b} ((*) 2)"
+proof-
+  have "\<And>x. ((\<lambda>x. (1/3)*(x ^ 3)) has_vector_derivative  (1/3) * ((real 3) * x ^ (3 -Suc 0)))  (at x within {a..b})"
+    apply(intro derivative_intros)
+    apply(rule DERIV_pow)
+    done
+  hence "\<And>x. ((\<lambda>x. (1/3)*(x ^ 3)) has_vector_derivative  x ^ 2)  (at x within {a..b})" by auto
+  hence "((\<lambda>x::real. (x ^ 2)) has_integral  1/3 * (b^3 - a^3))  {a..b}" using assms
+    apply(simp add: algebra_simps)
+    apply(rule Henstock_Kurzweil_Integration.fundamental_theorem_of_calculus)
+     apply(simp)+
+    done
+  hence power2_intble : "(\<lambda>x::real. x^2) integrable_on {a..b}" 
+    apply(rule has_integral_integrable)
+    done
+  have times2_intble: "(\<lambda>x::real. 2 * x) integrable_on {a..b}"
+    apply(auto intro: integrable_on_mult_right ident_integrable_on)
+    done
+  show ?thesis using power2_intble times2_intble
+    apply(rule integral_add)
+    done
+qed
+
+find_theorems "(_ has_field_derivative _) _" name: add
+find_theorems "?n + (0::real)"
+
+lemma circ_line_integ:
+  fixes F::"real \<times> real \<Rightarrow> real \<times> real"  and g::"real \<Rightarrow> real \<times> real"
+  assumes "F = (\<lambda>(x,y). (256/pi * sin(arctan (x/y)) * cos(arctan (x/y))^5) *\<^sub>R (cos(arctan (x/y)),sin(arctan (x/y))))" and
+          "basis = {(1,0), (0,1)}" and
+          "g = (\<lambda> t. (4 * cos (pi * t - pi/2), 4 * sin (pi * t - pi/2)))"
+  shows "line_integral F basis g = 0"
+proof-
+  have theta_deriv : "((\<lambda>x. pi * x + - pi / 2) has_real_derivative pi + 0) (at t)"
+    apply(rule DERIV_add[where E = 0])
+     apply(auto)
+    done
+  hence cos_deriv: "((\<lambda> t. 4 * cos (pi * t - pi/2)) has_derivative (*) (4 * ((-sin (pi * t - pi/2)) * pi))) (at t within {0..1})"
+    apply(subst sym[OF has_field_derivative_def])
+    apply(rule DERIV_cmult)
+    apply(rule has_field_derivative_at_within)
+    apply(rule DERIV_fun_cos)
+    apply(auto)
+    done
+  have sin_deriv: "((\<lambda>t. 4 * sin (pi * t - pi/2)) has_derivative (*) (4 * ((cos (pi * t - pi/2)) * pi))) (at t within {0..1})" using theta_deriv
+    apply(subst sym[OF has_field_derivative_def])
+    apply(rule DERIV_cmult)
+    apply(rule has_field_derivative_at_within)
+    apply(rule DERIV_fun_sin)
+    apply(auto)
+    done
+  have g_deriv : "(g has_derivative (\<lambda>h. ((4 * (-sin (pi * t - pi/2) * pi)) * h, (4 * (cos (pi * t - pi/2) * pi)) * h))) (at t within {0..1})" using cos_deriv sin_deriv
+    thm has_derivative_Pair
+    apply(subst assms)
+    apply(rule has_derivative_Pair)
+    apply(assumption)+
+    done
+  let ?g' = "(4 * (-sin (pi * t - pi/2) * pi), (4 * (cos (pi * t - pi/2) * pi)))"
+  have g_prime_scale : "(\<lambda>h. ((4 * (-sin (pi * t - pi/2) * pi)) * h, (4 * (cos (pi * t - pi/2) * pi)) * h)) = (\<lambda>h. h *\<^sub>R ?g')"
+    apply(auto)
+    done
+  have "(g has_vector_derivative ?g') (at t within {0..1})" using g_deriv
+    thm has_vector_derivative_def
+    thm sym[OF has_vector_derivative_def]
+    apply(subst has_vector_derivative_def)
+    thm sym[OF g_prime_scale]
+    apply(subst sym[OF g_prime_scale])
+    apply(auto)
+    done
+  thm line_integral_def
+  hence "t * pi \<ge> 0 \<Longrightarrow> t * pi \<le> 1 \<Longrightarrow> arctan (- (sin (t * pi - pi/2) / cos (t * pi - pi/2))) = - t * pi - pi/2"
+    apply(subst sym[OF tan_def])
+    apply(subst tan_minus)
+    apply(rule arctan_tan)
+    apply(auto)
+    thm arctan_tan
+  have "\<And> t. F (g t) = (256 / pi  * cos (pi * t) ^ 4) *\<^sub>R (cos (pi * t), sin(pi * t))" (*WRONG*)
+    apply(subst assms)+
+    apply(auto simp add: algebra_simps)
+    apply(subst minus_tan)
+    
+  have "line_integral F basis g = _____"
+  find_theorems "line_integral"
+    
+    
+end
