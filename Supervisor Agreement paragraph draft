@@ -1,6 +1,3 @@
-Mathematics is used within many types of AI systems. 
-Verifying the mathematics underlying these systems instils more trust the systems.
-I will make use of the Interactive Theorem Prover Isabelle/HOL to formalise mathematics underlying AI systems to help build more trustworthy AI systems.
-I plan to formalise general matching theory in Isabelle/HOL. This has many applications in AI systems used in social welfare such as Kidney Exchange Programmes. In social welfare, there is a strong requirement that the AI be trusted as people’s lives/well-being is at risk.
-I am also exploring the option of formalizing mathematics relating to Stokes’ Theorem.
-This has applications in hybrid systems and PDE solvers.
+Verification is the process of proving or disproving the correctness of algorithms by using formal methods. In other words, ensuring algorithms work in the way they are intended to work. I will use Isabelle/HOL, an interactive theorem prover, to verify matching algorithms.
+
+I will carry out research relating to matching algorithms used in social welfare such as those used in pupil-school matching, kidney donor-recipient matching or doctor-hospital matching. Working on general matching theory will be most useful, as this will have broader applications. Many matching markets are mathematically equivalent, and so results will apply to all equivalent markets. Formally verifying such results would lay the foundations for building software systems for social welfare applications with increased confidence in these systems. 
