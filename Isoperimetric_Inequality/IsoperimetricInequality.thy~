@@ -165,12 +165,7 @@ then \<integral>\<^sub>a\<^sup>b sqrt((x')\<^sup>2 + (y')\<^sup>2) \<ge>  \<inte
 So if we have an \<alpha> > 0, st.  sqrt((x' t)\<^sup>2 + (y' t)\<^sup>2) > \<alpha> at all points t \<in> I,
 this will guarantee that s is increasing and injective, which will guarantee a well-defined inverse.
 
-A regularly parametrised curve (RPC) is a smooth curve who's derivative never vanishes. We need our curve to be piecewise regularly parametrised.
+A regularly parametrised curve (RPC) is a curve who's derivative never vanishes. We need our curve to be piecewise regularly parametrised.
 *)
 
-term "list_all"
-find_theorems bi_unique
-value "filter"
-term "All"
-        
 end
