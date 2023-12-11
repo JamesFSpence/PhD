@@ -1,0 +1,15 @@
+----TO-DO----
+
+Using twice differentiable version of Green's Theorem that Mohammad intends to formalise
+
+Union of intervals returns set of contiguous intervals - then check if I is in one of them
+
+Clean up sub-interval proof
+
+Read transfer paper
+
+Add to-do to github and invite Mohammad to the repo
+
+Mention next meeting - how to get proofs shorter with auto
+
+Laptop
