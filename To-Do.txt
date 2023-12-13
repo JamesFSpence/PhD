@@ -9,3 +9,4 @@ Add to-do to github and invite Mohammad to the repo
 Mention next meeting - how to get proofs shorter with auto
 Using twice differentiable version of Green's Theorem that Mohammad intends to formalise
 Laptop
+Fix laptop time changing if I leave on overnight
