@@ -1,5 +1,6 @@
 ----TO-DO----
 
+Email Bonn about Application - what email to send it to?
 Finish Interval.thy file
 Union of intervals returns set of contiguous intervals - then check if I is in one of them
 Clean up sub-interval proof
