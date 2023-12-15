@@ -169,8 +169,5 @@ A regularly parametrised curve (RPC) is a smooth curve who's derivative never va
 *)
 
 term "list_all"
-find_theorems bi_unique
-value "filter"
-term "All"
-        
+
 end
