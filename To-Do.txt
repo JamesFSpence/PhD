@@ -8,8 +8,6 @@ Apply to LMS funding
 split to do by date
 Integral of intervals minus finite number of points are equal - typedef - transfer integrals to this type
 Finish Interval.thy file
-Union of intervals returns set of contiguous intervals - then check if I is in one of them
 Read transfer paper
-Mention next meeting - how to get proofs shorter with auto
 Using twice differentiable version of Green's Theorem that Mohammad intends to formalise
 Laptop
