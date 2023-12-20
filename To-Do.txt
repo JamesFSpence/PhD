@@ -1,14 +1,15 @@
 ----TO-DO----
 
+20/12
+Ask whether I can use my own funding to go to Bonn event - i.e do they have office space
+Apply to LMS funding
+
+------------
 split to do by date
 Integral of intervals minus finite number of points are equal - typedef - transfer integrals to this type
-Email Bonn about Application - what email to send it to? Joseph Urban
 Finish Interval.thy file
 Union of intervals returns set of contiguous intervals - then check if I is in one of them
-Clean up sub-interval proof
 Read transfer paper
-Add to-do to github and invite Mohammad to the repo
 Mention next meeting - how to get proofs shorter with auto
 Using twice differentiable version of Green's Theorem that Mohammad intends to formalise
 Laptop
-Fix laptop time changing if I leave on overnight
