@@ -65,8 +65,18 @@ qed
 
 locale f_well_paramed =
   fixes a::real and b::real and f::"(real\<Rightarrow>real\<times>real)"
-  assumes f_well_param: "well_parametrised_on {a..b} f"
+  assumes f_well_param: "well_parametrised_on {a..b} f" and
+          a_le_b: "a\<le>b"
 begin
+
+lemma f_continuous_on: "continuous_on {a..b} f"
+proof -
+  have "\<exists>f'. \<forall>t\<in>{a..b}. (f has_vector_derivative f' t) (at t) \<and> f' t \<noteq> 0 \<and> isCont f' t"
+    using f_well_param well_parametrised_on_def
+    by auto
+  thus ?thesis
+    by (meson continuous_at_imp_continuous_on has_vector_derivative_continuous)
+qed
 
 lemma speed_f_cont_within_a_b: "(\<forall>x\<in>{a..b}. continuous (at x within {a..b})(speed f))"
 proof -
@@ -151,8 +161,7 @@ lemma dist_cont_on: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
 
 lemma dist_maps_to_interval: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
   shows "d ` {a<..<b} = {(d a)<..<(d b)}"
-proof cases
-  assume 0: "a \<le> b"
+proof -
   have "is_interval (d ` {a..b})" using is_interval_connected_1
     by(auto simp add: assms dist_cont_on connected_continuous_image)
   have 1: "x \<in> {a<..<b} \<Longrightarrow> d a < d x \<and> d x < d b" for x
@@ -161,13 +170,13 @@ proof cases
     using greaterThanLessThan_iff by blast
   hence 3: "d ` ({a<..<b} \<union> {a,b}) \<subseteq> {(d a)<..<(d b)} \<union> {d a, d b}"
     by blast
-  have 4: "{a<..<b} \<union> {a,b} = {a..b}" using 0
-    using atLeastAtMost_diff_ends by auto
+  have 4: "{a<..<b} \<union> {a,b} = {a..b}" using a_le_b atLeastAtMost_diff_ends
+    by auto
   hence "d ` ({a..b}) \<subseteq> {(d a)..(d b)}"
     apply(rule subst)
     apply(rule subset_trans)
      apply(rule 3)
-    using 0 2 linorder_linear by fastforce
+    using a_le_b 2 linorder_linear by fastforce
   have "\<forall>x. d a \<le> x \<and> x \<le> d b \<longrightarrow> x \<in> d ` {a..b}" using \<open>is_interval (d ` {a..b})\<close>
     apply(subst (asm) is_interval_def)
     using "4" by auto
@@ -176,10 +185,6 @@ proof cases
     by(simp add: set_mp[OF image_diff_subset])
   thus ?thesis using \<open>is_interval (d ` {a..b})\<close>
     by(auto simp add: is_interval_def 1)
-next
-  assume "\<not> a\<le>b"
-  thus ?thesis
-    by(auto simp add: assms)
 qed
 
 lemma f_of_inv_d_has_unit_speed: assumes "d = (\<lambda>t. integral {a..t} (speed f))" "I = d ` {a<..<b}"
@@ -262,9 +267,47 @@ proof
   qed
 qed
 
+lemma shows "\<exists>x_max\<in>{a..b}. (\<forall>s\<in>{a..b}. fst (f s) \<le> fst (f x_max))"
+            "\<exists>x_min\<in>{a..b}. (\<forall>s\<in>{a..b}. fst (f x_min) \<le> fst (f s))"
+            "\<exists>y_max\<in>{a..b}. (\<forall>s\<in>{a..b}. snd (f s) \<le> snd (f y_max))"
+            "\<exists>y_min\<in>{a..b}. (\<forall>s\<in>{a..b}. snd (f y_min) \<le> snd (f s))"
+proof -
+  have 0: "isCont (\<lambda>x. f (clamp a b x)) x" for x
+    by (auto simp add: clamp_continuous_at f_continuous_on)
+  let ?x_comp = "(\<lambda>t. fst (f (clamp a b t)))"
+  have 1: "isCont ?x_comp x" for x using isCont_fst
+    by(auto simp add: 0)
+  hence "\<exists>M. (\<forall>x. a \<le> x \<and> x \<le> b \<longrightarrow> ?x_comp x \<le> M) \<and> (\<exists>x\<ge>a. x \<le> b \<and> ?x_comp x = M)"
+    apply -
+    apply(rule isCont_eq_Ub)
+    by(auto simp add: a_le_b)
+  thus "\<exists>x_max\<in>{a..b}. (\<forall>s\<in>{a..b}. fst (f s) \<le> fst (f x_max))"
+    by (metis atLeastAtMost_iff box_real(2) clamp_cancel_cbox)
+  have "\<exists>M. (\<forall>x. a \<le> x \<and> x \<le> b \<longrightarrow> ?x_comp x \<ge> M) \<and> (\<exists>x\<ge>a. x \<le> b \<and> ?x_comp x = M)"
+    apply -
+    apply(rule isCont_eq_Lb)
+    by(auto simp add: a_le_b 1)
+  thus "\<exists>x_min\<in>{a..b}. (\<forall>s\<in>{a..b}. fst (f x_min) \<le> fst (f s))"
+    by (metis atLeastAtMost_iff box_real(2) clamp_cancel_cbox)
+  let ?y_comp = "(\<lambda>t. snd (f (clamp a b t)))"
+  have 1: "isCont ?y_comp x" for x using isCont_snd
+    by(auto simp add: 0)
+  hence "\<exists>M. (\<forall>x. a \<le> x \<and> x \<le> b \<longrightarrow> ?y_comp x \<le> M) \<and> (\<exists>x\<ge>a. x \<le> b \<and> ?y_comp x = M)"
+    apply -
+    apply(rule isCont_eq_Ub)
+    by(auto simp add: a_le_b)
+  thus "\<exists>y_max\<in>{a..b}. (\<forall>s\<in>{a..b}. snd (f s) \<le> snd (f y_max))"
+    by (metis atLeastAtMost_iff box_real(2) clamp_cancel_cbox)
+  have "\<exists>M. (\<forall>x. a \<le> x \<and> x \<le> b \<longrightarrow> ?y_comp x \<ge> M) \<and> (\<exists>x\<ge>a. x \<le> b \<and> ?y_comp x = M)"
+    apply -
+    apply(rule isCont_eq_Lb)
+    by(auto simp add: a_le_b 1)
+  thus "\<exists>x_min\<in>{a..b}. (\<forall>s\<in>{a..b}. snd (f x_min) \<le> snd (f s))"
+    by (metis atLeastAtMost_iff box_real(2) clamp_cancel_cbox)
+qed
 
-lemma "\<exists>t \<in> {a<..<b}"
-
+lemma  shows "\<exists>y_max\<in>{a..b}. (\<forall>s\<in>{a..b}. fst (f s) \<le> snd (f y_max))"
+            "\<exists>y_min\<in>{a..b}. (\<forall>s\<in>{a..b}. fst (f y_min) \<le> snd (f s))"
 
 find_theorems name:IVT
 

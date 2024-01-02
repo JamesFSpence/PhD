@@ -156,7 +156,6 @@ proof cases
   have "is_interval (d ` {a..b})" using is_interval_connected_1
     by(auto simp add: assms dist_cont_on connected_continuous_image)
   have 1: "x \<in> {a<..<b} \<Longrightarrow> d a < d x \<and> d x < d b" for x
-    apply(rule conjI)
     by(auto intro!: assms dist_is_strict_mono_on strict_mono_onD[of "{a..b}" d])
   hence 2:"d ` {a<..<b} \<subseteq> {(d a)<..<(d b)}"
     using greaterThanLessThan_iff by blast
@@ -166,32 +165,22 @@ proof cases
     using atLeastAtMost_diff_ends by auto
   hence "d ` ({a..b}) \<subseteq> {(d a)..(d b)}"
     apply(rule subst)
-    apply(rule subset_trans[of _ "{(d a)<..<(d b)} \<union> {d a, d b}"])
+    apply(rule subset_trans)
      apply(rule 3)
     using 0 2 linorder_linear by fastforce
-  have "\<forall>x. (\<forall>i\<in>Basis. d a \<bullet> i \<le> x \<bullet> i \<and> x \<bullet> i \<le> d b \<bullet> i \<or> d b \<bullet> i \<le> x \<bullet> i \<and> x \<bullet> i \<le> d a \<bullet> i) \<longrightarrow> x \<in> d ` {a..b}"
-    using \<open>is_interval (d ` {a..b})\<close> apply(subst (asm) is_interval_def)
-    thm ballI
-    find_theorems "?a \<equiv> ?b \<Longrightarrow> ?a = ?b"
-    find_theorems "(\<And>x. x \<in> ?A \<Longrightarrow> ?P x)" "\<forall>x\<in>?A. ?P x"
-    find_theorems name:def
-    apply(simp add: atomize_ball)
-  thus ?thesis using \<open>is_interval (d ` {a..b})\<close>
-    apply(auto simp add: 1)
-    thm is_interval_def
+  have "\<forall>x. d a \<le> x \<and> x \<le> d b \<longrightarrow> x \<in> d ` {a..b}" using \<open>is_interval (d ` {a..b})\<close>
     apply(subst (asm) is_interval_def)
-    find_theorems "is_interval" "?a \<in> ?S"
-    sorry
+    using "4" by auto
+  hence "\<forall>x. d a < x \<and> x < d b \<longrightarrow> x \<in> d ` {a<..<b}"
+    apply(subst sym[OF atLeastAtMost_diff_ends])
+    by(simp add: set_mp[OF image_diff_subset])
+  thus ?thesis using \<open>is_interval (d ` {a..b})\<close>
+    by(auto simp add: is_interval_def 1)
 next
   assume "\<not> a\<le>b"
   thus ?thesis
-    apply(auto simp add: assms)
-    by (auto simp add: assms)
+    by(auto simp add: assms)
 qed
-
-  find_theorems "?f ` ?s" "continuous_on"
-  find_theorems "connected ?s" "is_interval"
-  sorry
 
 lemma f_of_inv_d_has_unit_speed: assumes "d = (\<lambda>t. integral {a..t} (speed f))" "I = d ` {a<..<b}"
   shows "\<forall>t\<in>I. speed (f \<circ> (the_inv_into {a..b} d)) t = 1"
@@ -230,29 +219,25 @@ proof-
     by(simp add: the_inv_d_isCont)
   hence inv_d_has_deriv: "\<forall>t\<in>I. (the_inv_into {a..b} d has_vector_derivative 1/norm (vector_derivative f (at (the_inv_into {a..b} d t)))) (at t)"
     by(auto simp add: dist_maps_to_interval inverse_eq_divide has_real_derivative_iff_has_vector_derivative assms)
-  hence inv_d_deriv: "\<forall>t\<in>I. vector_derivative (the_inv_into {a..b} d) (at t) = 1/norm (vector_derivative f (at (the_inv_into {a..b} d t)))"
-    using vector_derivative_at assms by auto
+  have inv_d_deriv: "\<forall>t\<in>I. vector_derivative (the_inv_into {a..b} d) (at t) = 1/norm (vector_derivative f (at (the_inv_into {a..b} d t)))"
+    using vector_derivative_at assms inv_d_has_deriv by auto
   have inv_d_differentiable: "\<forall>t\<in>I. the_inv_into {a..b} d differentiable at t"
     using inv_d_has_deriv assms by (auto simp add: differentiableI_vector)
-  have f_diffble_at: "t \<in> {a..b} \<Longrightarrow> f differentiable at t" for t
+  have 1: "t \<in> {a..b} \<Longrightarrow> f differentiable at t" for t
     using f_well_param well_parametrised_on_def by (meson differentiableI_vector)
-  have f_diffble_at2: "t \<in> I \<Longrightarrow> f differentiable at (the_inv_into {a..b} d t)" for t
-    by (intro inv_into_in f_diffble_at) (auto simp add: assms)
+  have f_diffble_at: "t \<in> I \<Longrightarrow> f differentiable at (the_inv_into {a..b} d t)" for t
+    by (intro inv_into_in 1) (auto simp add: assms)
   show ?thesis
     apply(subst speed_def)
     apply(rule ballI)
     apply(subst vector_derivative_chain_at)
     apply(simp add: inv_d_differentiable)
-    apply(simp add: f_diffble_at2)
+    apply(simp add: f_diffble_at)
     apply(simp add: inv_d_deriv)
     by(auto intro!: deriv_f_non_zero inv_into_in simp add: assms(2))
 qed
 
-find_theorems "?f ` _" "inj_on"
-find_theorems "the_inv_into"
-find_theorems "inj_on" "{?a..?b}"
-
-(*Exists arc length parametrisation and image of f is the same given a new domain.*)
+(*Exists arc length parametrisation and image of f is the same when composed with the parametrisation.*)
 lemma "\<exists>s l. \<forall>t\<in>{0<..<l}. speed (f\<circ>s) t = 1 \<and> (f \<circ> s) ` {0<..<l} = f ` {a<..<b}"
 proof
   let ?d = "(\<lambda>t. integral {a..t} (speed f))"
@@ -276,6 +261,10 @@ proof
       by simp
   qed
 qed
+
+
+lemma "\<exists>t \<in> {a<..<b}"
+
 
 find_theorems name:IVT
 
