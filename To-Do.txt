@@ -5,7 +5,7 @@ Ask whether I can use my own funding to go to Bonn event - i.e do they have offi
 Apply to LMS funding
 
 ------------
-split to do by date
+
 Integral of intervals minus finite number of points are equal - typedef - transfer integrals to this type
 Finish Interval.thy file
 Read transfer paper
