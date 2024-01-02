@@ -131,14 +131,15 @@ definition piecewise_RPC :: "(real \<Rightarrow> (real \<times> real)) \<Rightar
 definition speed :: "(real \<Rightarrow> (real \<times> real)) \<Rightarrow> (real \<Rightarrow> real)" where
 "speed f = (\<lambda>t. norm (vector_derivative f (at t)))"
 
+find_theorems "interior {?a..?b}"
 definition arclength_param_on :: "(real \<Rightarrow> (real \<times> real)) \<Rightarrow> real set \<Rightarrow> bool"
-  where "arclength_param_on c I \<equiv> \<forall>t\<in>I. (speed c) t = 1"
+  where "arclength_param_on c I \<equiv> \<forall>t\<in>(interior I). (speed c) t = 1"
 
 definition arc_length_fun :: "(real \<Rightarrow> (real \<times> real)) \<Rightarrow> real \<Rightarrow> (real \<Rightarrow> real)" where
 "arc_length_fun f start \<equiv> (\<lambda>t. integral {start..t} (speed f))"
 
 definition reparam_of :: "(real \<Rightarrow> (real \<times> real)) \<Rightarrow> (real \<Rightarrow> (real \<times> real)) \<Rightarrow> (real \<Rightarrow> real) \<Rightarrow> (real set) \<Rightarrow> bool"  where
-"reparam_of c\<^sub>1 c\<^sub>2 \<gamma> I \<equiv> (is_interval I \<and> continuous_on I \<gamma> \<and> (\<forall>t\<in>I. c\<^sub>1 t = (c\<^sub>2 \<circ> \<gamma>) t \<and> (\<exists>\<gamma>'. (\<gamma> has_vector_derivative (\<gamma>' t)) (at t))))"
+"reparam_of c\<^sub>1 c\<^sub>2 \<gamma> I \<equiv> (is_interval I \<and> continuous_on I \<gamma> \<and> inj_on \<gamma> I \<and> (\<forall>t\<in>I. c\<^sub>1 t = (c\<^sub>2 \<circ> \<gamma>) t \<and> (\<exists>\<gamma>'. (\<gamma> has_vector_derivative (\<gamma>' t)) (at t))))"
 
 (*What lemmas do I want to show?
 
@@ -149,7 +150,7 @@ Assuming f is_RPC_on I, what lemmas do I want to show?
 \<rightarrow> speed f \<noteq> 0 \<checkmark>
 \<rightarrow> d = \<integral> speed f is increasing
 \<rightarrow> inv d is well-defined
-\<rightarrow> inv d is continuous - why is this important?
+\<rightarrow> inv d is differentiable
 \<rightarrow> f \<circ> (inv d) is arc length parametrisation
 \<rightarrow> This can be transformed into constant speed function on {0..1}?
 
@@ -460,8 +461,9 @@ proof -
   have "t\<in>{a<..b} \<Longrightarrow> integral ({a..t}) (speed f) > 0" for t
     apply(rule integral_non_zero_f_gr_0)
         apply(auto simp add: 0 1 2 Elementary_Topology.continuous_on_interior)
+    sorry
   thm RPC_speed_gr_0[OF assms(1)]
-  have ?thesis using RPC_speed_gr_0 assms
+  show ?thesis using RPC_speed_gr_0 assms
     unfolding strict_mono_on_def
     apply(simp)
     sorry
@@ -472,7 +474,6 @@ term list_all
 lemma fixes f :: "(real \<Rightarrow> real \<times> real)" and I :: "interval"
   assumes "f is_RPC_on I" and "s = arc_length_fun f (interval_Min I)" and "\<gamma> = inv s"
   shows "reparam_of f (f \<circ> \<gamma>) \<gamma> (Rep_interval I)"
-proof -
     sorry
 (*To prove this I need to show inv s is deifferentiable which requires the inverse function theorem*)
 
