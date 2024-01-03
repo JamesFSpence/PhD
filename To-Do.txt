@@ -11,4 +11,4 @@ Integral of intervals minus finite number of points are equal - typedef - transf
 Finish Interval.thy file
 Read transfer paper
 Using twice differentiable version of Green's Theorem that Mohammad intends to formalise
-Laptop
+Set up new laptop
