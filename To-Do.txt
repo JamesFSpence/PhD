@@ -12,7 +12,7 @@ Prepare for talk on transfering in Isabelle.
 
 ------------
 
-Integral of intervals minus finite number of points are equal - typedef - transfer integrals to this type - Intervals form a semiring!!!
+Integral of intervals minus finite number of points are equal - typedef - transfer integrals to this type - Intervals form a semiring_of_sets!
 Finish Interval.thy file
 Read transfer paper
 Using twice differentiable version of Green's Theorem that Mohammad intends to formalise
