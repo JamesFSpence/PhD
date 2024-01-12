@@ -1,8 +1,6 @@
 ----TO-DO----
 
 03/01
-RTSG is £2,500 oer annum
-What is lborel/PiM/Pi?
 Look at Green's Theorem proof and try to reconcile it with Isoperimetric Problem.
 
 20/12
