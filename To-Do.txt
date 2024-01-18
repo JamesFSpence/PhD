@@ -1,7 +1,13 @@
 ----TO-DO----
 
+18/01
+Come up with specification for region and boundary.
+  - prove functions are analytically valid
+  - combine only horiztonal and vertical division and existence of subdivision preconditions with the isoperimetric problem path assumptions (e.g well-parametrised).
+
 03/01
 Look at Green's Theorem proof and try to reconcile it with Isoperimetric Problem.
+
 
 20/12
 Ask whether I can use my own funding to go to Bonn event - i.e do they have office space
