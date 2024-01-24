@@ -1,5 +1,10 @@
 ----TO-DO----
 
+24/01
+Apply to School on formal mathematics
+Write progress report
+Print off passport documents
+
 18/01
 Come up with specification for region and boundary.
   - prove functions are analytically valid
