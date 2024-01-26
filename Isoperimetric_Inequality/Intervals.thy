@@ -1,37 +1,27 @@
 theory Intervals
-  imports "$AFP/Green/Green"
+  imports "HOL-Analysis.Analysis" "HOL-Probability.Probability_Mass_Function"
 begin
 
 typedef interval = "{S :: real set. is_interval S}"
 proof-
   show ?thesis by blast
 qed
+
+term "s::real set"
+term "Abs_interval s"
+term "Abs_interval {a..b}"
 print_theorems
 
 setup_lifting type_definition_interval
 
+print_theorems
+
 (*Subsets*)
-lift_definition ivl_subseteq1 :: "interval \<Rightarrow> interval \<Rightarrow> bool"
+lift_definition ivl_subseteq :: "interval \<Rightarrow> interval \<Rightarrow> bool"
   is "(\<lambda> I J. I \<subseteq> J)"
   done
 
-lift_definition ivl_subseteq2 :: "interval \<Rightarrow> real set \<Rightarrow> bool"
-  is "(\<lambda> I S. I \<subseteq> S)"
-  done
-
-lift_definition ivl_subseteq3 :: "real set \<Rightarrow> interval \<Rightarrow> bool"
-  is "(\<lambda>S I. S \<subseteq> I)"
-  done
-
-lift_definition ivl_subset1 :: "interval \<Rightarrow> interval \<Rightarrow> bool"
-  is "(\<lambda> I J. I \<subset> J)"
-  done
-
-lift_definition ivl_subset2 :: "interval \<Rightarrow> real set \<Rightarrow> bool"
-  is "(\<lambda> I J. I \<subset> J)"
-  done
-
-lift_definition ivl_subset3 :: "real set \<Rightarrow> interval \<Rightarrow> bool"
+lift_definition ivl_subset :: "interval \<Rightarrow> interval \<Rightarrow> bool"
   is "(\<lambda> I J. I \<subset> J)"
   done
 
@@ -45,8 +35,7 @@ lift_definition ivl_Inter :: "interval set \<Rightarrow> interval"
 proof -
   fix intervals :: "real set set"
   assume 0: "\<And>x. x\<in>intervals \<Longrightarrow> is_interval x"
-  have 1: "\<forall>A. A \<in> intervals \<longrightarrow> x \<in> A \<Longrightarrow> B \<in> intervals \<Longrightarrow> x \<in> B" for B x by auto
-  have 2: "is_interval I \<Longrightarrow> a \<in> I \<Longrightarrow> b \<in> I \<Longrightarrow> a \<le> c \<Longrightarrow> c \<le> b \<Longrightarrow> c \<in> I" for a::real and b::real and  c::real and I::"real set"
+  have 2: "is_interval I \<Longrightarrow> a \<in> I \<Longrightarrow> b \<in> I \<Longrightarrow> a \<le> c \<Longrightarrow> c \<le> b \<Longrightarrow> c \<in> I" for a b c::real and I::"real set"
     using mem_is_interval_1_I by blast
   have 3: "\<forall>A. A \<in> intervals \<longrightarrow> a \<in> A \<Longrightarrow> \<forall>B. B \<in> intervals \<longrightarrow> b \<in> B \<Longrightarrow> a \<le> c \<Longrightarrow> c \<le> b \<Longrightarrow> D \<in> intervals \<Longrightarrow> c \<in> D" for a b c D
     apply(rule 2[of D a b c])
@@ -58,13 +47,10 @@ proof -
     by (auto intro: 3)
 qed
 
-lift_definition ivl_union :: "interval \<Rightarrow> interval \<Rightarrow> real set"
-  is "(\<lambda> A B. A\<union>B)"
-  done
-
-lift_definition ivl_Union :: "interval set \<Rightarrow> real set"
-  is "(\<lambda> Is. \<Union>Is)"
-  done
+(*The input to instantiation 'semiring of sets' needs to be a class not a locale.
+For locales, you can use interpretation.*)
+instantiation interval :: (type) semiring_of_sets
+begin
 
 lift_definition ivl_in :: "real \<Rightarrow> interval \<Rightarrow> bool"
   is "(\<lambda> t I. t \<in> I)"
@@ -148,10 +134,10 @@ definition reparam_of :: "(real \<Rightarrow> (real \<times> real)) \<Rightarrow
 Assuming f is_RPC_on I, what lemmas do I want to show?
 
 \<rightarrow> speed f \<noteq> 0 \<checkmark>
-\<rightarrow> d = \<integral> speed f is increasing
-\<rightarrow> inv d is well-defined
-\<rightarrow> inv d is differentiable
-\<rightarrow> f \<circ> (inv d) is arc length parametrisation
+\<rightarrow> d = \<integral> speed f is increasing \<checkmark>
+\<rightarrow> inv d is well-defined \<checkmark>
+\<rightarrow> inv d is differentiable \<checkmark>
+\<rightarrow> f \<circ> (inv d) is arc length parametrisation \<checkmark>
 \<rightarrow> This can be transformed into constant speed function on {0..1}?
 
 Assuming f is_piecewise_RPC_on S I, what lemmas do I want to show?
@@ -475,10 +461,126 @@ lemma fixes f :: "(real \<Rightarrow> real \<times> real)" and I :: "interval"
   assumes "f is_RPC_on I" and "s = arc_length_fun f (interval_Min I)" and "\<gamma> = inv s"
   shows "reparam_of f (f \<circ> \<gamma>) \<gamma> (Rep_interval I)"
     sorry
-(*To prove this I need to show inv s is deifferentiable which requires the inverse function theorem*)
+(*To prove this I need to show inv s is differentiable which requires the inverse function theorem*)
 
 lemma fixes f :: "(real \<Rightarrow> real \<times> real)" and I :: "real set"
   assumes "is_interval I" and "f is_RPC I" and "inv_s = inv (arc_length_fun f (Min I))"
   shows "f is_RPC I \<Longrightarrow> (arclength_param_at (f \<circ> s) I)"
+
+lemma minus_interval_covering:
+  fixes A B ::"real set"
+  assumes "is_interval A" "(\<exists>C\<subseteq>{S. is_interval S}. finite C \<and> disjoint C \<and> UNIV - B = \<Union> C)"
+  shows "\<exists>D\<subseteq>{S. is_interval S}. finite D \<and> disjoint D \<and> A - B = \<Union> D"
+proof -
+  obtain C where C_def: "C\<subseteq>{S. is_interval S} \<and> finite C \<and> disjoint C \<and> UNIV - B = \<Union> C" using assms by auto
+  let ?D = "(\<lambda>x. A \<inter> x) ` C"
+  have "finite ?D" using C_def by auto
+  moreover have "disjoint ?D" using C_def
+    by (simp add: disjoint_image_subset)
+  moreover have "A - B = \<Union> ?D" using C_def by auto
+  moreover have "is_interval A \<Longrightarrow> ?D \<subseteq> {S. is_interval S}" using C_def
+    using is_interval_Int by blast
+  ultimately show ?thesis using assms by auto
+qed
+
+interpretation intervals: semiring_of_sets "UNIV" "{S :: real set. is_interval S}"
+proof
+  show "{S. is_interval S} \<subseteq> Pow UNIV" by auto
+  show "{} \<in> {S. is_interval S}" by auto
+  show "\<And>a b. a \<in> {S. is_interval S} \<Longrightarrow> b \<in> {S. is_interval S} \<Longrightarrow> a \<inter> b \<in> {S. is_interval S}" 
+    by (simp add: is_interval_Int)
+  have "B = {} \<or> B = UNIV \<or> B = {..<a} \<or> B = {..a} \<or> B = {a<..} \<or> B = {a..} \<Longrightarrow> is_interval (UNIV - B) " for a ::real and B
+    apply(subst sym[OF Compl_eq_Diff_UNIV])
+    by(auto)
+  hence 0:"B = {} \<or> B = UNIV \<or> B = {..<a} \<or> B = {..a} \<or> B = {a<..} \<or> B = {a..} \<Longrightarrow> \<exists>C\<subseteq>{S. is_interval S}. finite C \<and> disjoint C \<and> UNIV - B = \<Union> C" for a::real and B
+    apply -
+    apply(rule exI[of _ "{UNIV - B}"])
+    by(simp)
+  hence 1: "is_interval A \<Longrightarrow> B = {} \<or> B = UNIV \<or> B = {..<a} \<or> B = {..a} \<or> B = {a<..} \<or> B = {a..} \<Longrightarrow> \<exists>C\<subseteq>{S. is_interval S}. finite C \<and> disjoint C \<and> A - B = \<Union> C" for a::real and A B
+    using minus_interval_covering by auto
+  have "B = {a<..<b} \<or> B = {a<..b} \<or> B = {a..<b} \<or> B = {a..b} \<Longrightarrow>  \<exists>C\<subseteq>{S. is_interval S}. finite C \<and> disjoint C \<and> UNIV - B = \<Union> C" for a b :: real and B
+  proof cases
+    assume "a\<ge>b"
+    hence B_bounded_cases: "B = {a<..<b} \<or> B = {a<..b} \<or> B = {a..<b} \<or> B = {a..b} \<Longrightarrow> B = {} \<or> B = {a}" by auto
+    have "disjoint {{..<a}, {a<..}}"
+      by(auto simp add: Int_commute disjoint_def)
+    hence "B = {a} \<Longrightarrow> \<exists>C\<subseteq>{S. is_interval S}. finite C \<and> disjoint C \<and> UNIV - B = \<Union> C"
+      apply -
+      apply(rule exI[of _ "{{..<a},{a<..}}"])
+      by(auto)
+    thus "B = {a<..<b} \<or> B = {a<..b} \<or> B = {a..<b} \<or> B = {a..b} \<Longrightarrow>  \<exists>C\<subseteq>{S. is_interval S}. finite C \<and> disjoint C \<and> UNIV - B = \<Union> C"
+      using 0 B_bounded_cases by presburger
+  next
+    assume "\<not>a\<ge>b"
+    hence "a<b" by auto
+    have a1: "B = {a<..<b} \<Longrightarrow> UNIV - B = \<Union> {{..a},{b..}}" by auto
+    have a2: "B = {a<..b} \<Longrightarrow> UNIV - B = \<Union> {{..a},{b<..}}" by auto
+    have a3: "B = {a..<b} \<Longrightarrow> UNIV - B = \<Union> {{..<a},{b..}}" by auto
+    have a4: "B = {a..b} \<Longrightarrow> UNIV - B = \<Union> {{..<a},{b<..}}" by auto
+    have "disjoint {{..a},{b..}}" "disjoint {{..<a},{b..}}" "disjoint {{..a},{b<..}}" "disjoint {{..<a},{b<..}}" using \<open>a<b\<close>
+      by (auto simp add: Int_commute disjoint_def)
+    thus "B = {a<..<b} \<or> B = {a<..b} \<or> B = {a..<b} \<or> B = {a..b} \<Longrightarrow>  \<exists>C\<subseteq>{S. is_interval S}. finite C \<and> disjoint C \<and> UNIV - B = \<Union> C"
+      apply -
+      apply(erule disjE)
+       apply(drule a1)
+      apply(rule exI[of _ "{{..a},{b..}}"])
+       apply(simp)
+      apply(erule disjE)
+       apply(drule a2)
+      apply(rule exI[of _ "{{..a},{b<..}}"])
+       apply(simp)
+       apply(erule disjE)
+       apply(drule a3)
+      apply(rule exI[of _ "{{..<a},{b..}}"])
+       apply(simp)
+       apply(drule a4)
+      apply(rule exI[of _ "{{..<a},{b<..}}"])
+      apply(simp)
+      done
+        (*WHICH IS PREFERRED - SIMPLE BUT LONG APPLY SCRIPT, OR LONG METIS CALL?*)
+      (*by (metis a1 a2 a3 a4 empty_subsetI finite.emptyI finite.insertI insert_subsetI is_interval_ci is_interval_ic is_interval_io is_interval_oi mem_Collect_eq)*)
+  qed
+  hence 2: "is_interval A \<Longrightarrow> B = {a<..<b} \<or> B = {a<..b} \<or> B = {a..<b} \<or> B = {a..b} \<Longrightarrow>  \<exists>C\<subseteq>{S. is_interval S}. finite C \<and> disjoint C \<and> A - B = \<Union> C" for a b ::real and A B
+    using minus_interval_covering by auto
+  have real_interval_disj: "is_interval B \<Longrightarrow> \<exists>a b. (B = {} \<or> B = UNIV \<or> B = {..<a} \<or> B = {..a} \<or> B = {a<..} \<or> B = {a..}) \<or> (B = {a<..<b} \<or> B = {a<..b} \<or> B = {a..<b} \<or> B = {a..b})" for B ::"real set"
+    using is_real_interval by auto
+  thm disjI1
+  find_theorems "(?A \<Longrightarrow> ?C)" "?A\<or>?B \<Longrightarrow> ?C"
+  thm 1 2 disjE
+  show "a \<in> {S. is_interval S} \<Longrightarrow> b \<in> {S. is_interval S} \<Longrightarrow> \<exists>C\<subseteq>{S. is_interval S}. finite C \<and> disjoint C \<and> a - b = \<Union> C" for a b :: "real set"
+    apply(rule disjE)
+    apply(simp)
+    apply(drule real_interval_disj[of b])
+    apply(erule exE)+
+    apply(erule disjE)
+    by(auto simp add: 1 2)
+qed
+
+
+find_theorems name: ring
+
+print_theorems
+
+term extend_measure
+term interval_measure
+term PiM
+term PiE
+term Pi
+term measure_of
+term distr
+term lborel
+term borel
+term prod_emb
+term sigma_algebra
+term algebra
+term almost_everywhere
+term ae_filter
+term principal
+term Abs_filter
+term uniform_measure
+term density
+term " \<integral>\<^sup>+ x. f x * indicator A x \<partial>M"
+
+
 
 end
