@@ -5,6 +5,7 @@ Apply to School on formal mathematics
 Write progress report
 Print off passport documents
 Make note of BIOS Password
+Add cross section of a closed/open set is also closed/open.
 
 18/01
 Come up with specification for region and boundary.
