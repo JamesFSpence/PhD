@@ -2,12 +2,9 @@
 
 31/01
 Send Passport application
-Find out dates when CDT activities occur
 Ask Dan and Hannah about leaving for Bonn
-Find who in the CDT to talk to about internship in Bonn
 
 24/01
-Apply to School on formal mathematics
 Write progress report
 
 18/01
@@ -17,7 +14,6 @@ Come up with specification for region and boundary.
 
 03/01
 Look at Green's Theorem proof and try to reconcile it with Isoperimetric Problem.
-
 
 20/12
 Ask whether I can use my own funding to go to Bonn event - i.e do they have office space
