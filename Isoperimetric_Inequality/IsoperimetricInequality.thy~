@@ -1,133 +1,318 @@
 theory IsoperimetricInequality
   imports Intervals "$AFP/Green/Green"
 begin
-fun test::"nat \<Rightarrow> nat" where
-"test _  = undefined"
 
-lemma "test 0 = undefined" by auto
+lemma measurable_cross_section_typeI:(*PROOF CAN BE SHORTENED*)
+  assumes "typeI_twoCube C"
+  shows "(\<lambda>x. measure lebesgue {y. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
+proof -
+  obtain a b g1 g2 where C_def: "a < b \<and> (\<forall>x \<in> {a..b}. g2 x \<le> g1 x) \<and>
+                       C = (\<lambda>(x,y). ((1-x)*a + x*b,
+                                        (1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)))) \<and>
+                       g1 piecewise_C1_differentiable_on {a..b} \<and>
+                       g2 piecewise_C1_differentiable_on {a..b}"
+    using assms typeI_twoCube_def by auto
+  have minus_cont:"continuous_on {a..b} (g1 - g2)"
+    by (auto simp add: C_def continuous_on_diff piecewise_C1_differentiable_on_imp_continuous_on)
+  have "a<b" using C_def by simp
+  have g1_to_g2:"{y. g2 x \<le> y \<and> y\<le> g1 x} = {g2 x..g1 x}" for x
+    by(auto)
+  have "(\<exists>z\<in>{0..1}. x = a + (b-a)*z) = (x \<in> {a..b})" for x
+    by (metis (mono_tags, lifting) C_def add_scale_img image_iff)
+  hence 2: "(\<exists>z\<in>{0..1}. x = (1-z)*a + z*b) = (x \<in> {a..b})" for x
+    by (simp add: algebra_simps)
+  have "(x,y) \<in> cubeImage C \<Longrightarrow> \<exists>z\<in>{0..1}. x = (1-z)*a + z*b" for x y
+    using box_real(2) image_def cubeImage_def C_def by force
+  hence cubeImage_x:"(x,y) \<in> cubeImage C \<Longrightarrow> x \<in> {a..b}" for x y
+    using "2" by blast
+  hence "x \<notin> {a..b} \<Longrightarrow>{y. (x, y) \<in> cubeImage C} = {}" for x
+    by blast
+  hence x_notin_a_b:"x \<notin> {a..b} \<Longrightarrow> measure lebesgue {y. (x, y) \<in> cubeImage C} = 0" for x
+    by auto
+  have 3: "(x,y)\<in> cubeImage C = (\<exists>(w,z)\<in>unit_cube. (x,y) = ((1-w)*a + w*b,
+                                        (1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b))))" for x y
+    using C_def cubeImage_def by auto
+  have "x\<in>{a..b} \<Longrightarrow> ((x,y)\<in> cubeImage C) = (g2 x \<le> y \<and> y \<le> g1 x)" for x y
+  proof
+    assume "(x,y)\<in> cubeImage C"
+    then obtain w z where wz_def: "(w,z)\<in>unit_cube \<and> (x,y) = ((1-w)*a + w*b,
+                                        (1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)))"
+      using 3 by auto
+    hence "z\<in>{0..1}" by auto
+    have 4:"0 \<le> (g1 x - g2 x) * z"
+      by (meson C_def \<open>(x, y) \<in> cubeImage C\<close> \<open>z \<in> {0..1}\<close> atLeastAtMost_iff cubeImage_x diff_ge_0_iff_ge mult_nonneg_nonneg)
+    hence "g2 x + (g1 x - g2 x) * z \<le> g2 x + (g1 x - g2 x)"
+      by (metis C_def \<open>(x, y) \<in> cubeImage C\<close> \<open>z \<in> {0..1}\<close> add.commute atLeastAtMost_iff cubeImage_x diff_add_cancel diff_ge_0_iff_ge le_diff_eq mult_left_le)
+    hence 5: "g2 x + (g1 x - g2 x) * z \<le> g1 x"
+      by simp
+    have 6: "x\<in>{a..b}"
+      using \<open>(x, y) \<in> cubeImage C\<close> cubeImage_x by blast
+    have "x = (1-w)*a + w*b" using wz_def by simp
+    hence "(x,y) = (x, (1-z)*g2 x + z * g1 x)" using wz_def by auto
+    hence "y = g2 x + (g1 x - g2 x) * z" by (auto simp add: algebra_simps)
+    thus "(x,y)\<in> cubeImage C \<Longrightarrow> g2 x \<le> y \<and> y \<le> g1 x"
+      using \<open>z \<in> {0..1}\<close> by(auto simp add: cubeImage_x 4 5 6 C_def)
+  next
+    assume "(g2 x \<le> y \<and> y \<le> g1 x)"
+    hence y_in:"y \<in> {g2 x.. g1 x}" by auto
+    assume asm2: "x\<in>{a..b}"
+    hence "\<exists>w\<in>{0..1}. x = (1-w)*a + w*b"
+      using "2" by blast
+    then obtain w where w_def:"w\<in>{0..1} \<and> x = (1-w)*a + w*b" by auto
+    have "g2 x \<le> g1 x" using C_def asm2 by auto
+    hence "\<exists>z\<in>{0..1}. y = g2 x + (g1 x - g2 x)*z"
+      using add_scale_img'[of "g2 x" "g1 x"] y_in by auto
+    hence "\<exists>z\<in>{0..1}. y = (1 - z) * (g2 x) + z * (g1 x)"
+      by (auto simp add: algebra_simps)
+    then obtain z where z_def:"z\<in>{0..1} \<and> y = (1 - z) * (g2 x) + z * (g1 x)" by auto
+    hence "(x,y) = ((1-w)*a + w*b, (1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)))"
+      using w_def by auto
+    hence "\<exists>(w,z)\<in>unit_cube. (x,y) = ((1-w)*a + w*b, (1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)))"
+      using w_def z_def by auto
+    thus "(x,y) \<in> cubeImage C" using cubeImage_def C_def by auto
+  qed
+  hence "x\<in>{a..b} \<Longrightarrow> {y. (x,y)\<in> cubeImage C} = {y. g2 x \<le> y \<and> y \<le> g1 x}" for x
+    by auto
+  hence "x\<in>{a..b} \<Longrightarrow> measure lebesgue {y. (x, y) \<in> cubeImage C} = measure lebesgue {y. g2 x \<le> y \<and> y\<le> g1 x}" for x
+    by(auto)
+  hence measure_s\<^sub>x: "x\<in>{a..b} \<Longrightarrow> measure lebesgue {y. (x, y) \<in> cubeImage C} = g1 x - g2 x" for x
+    by(simp add: g1_to_g2 C_def)
+  have measure_indicat:"(\<lambda>x. measure lebesgue {y. (x, y) \<in> cubeImage C}) x = (\<lambda>x. indicat_real {a..b} x *\<^sub>R (g1 x - g2 x)) x" for x
+    by (metis indicator_simps(1) indicator_simps(2) measure_s\<^sub>x mult_cancel_right1 mult_eq_0_iff real_scaleR_def x_notin_a_b)
+  thus "(\<lambda>x. measure lebesgue {y. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
+    apply(subst measure_indicat)
+    apply(rule borel_measurable_continuous_on_indicator)
+    using minus_cont by(auto)
+qed
+
+lemma measurable_cross_section_typeII:(*PROOF CAN BE SHORTENED*)
+  assumes "typeII_twoCube C"
+  shows "(\<lambda>y. measure lebesgue {x. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
+proof -
+  obtain a b g1 g2 where C_def: "a < b \<and> (\<forall>x \<in> {a..b}. g2 x \<le> g1 x) \<and>
+                       C = (\<lambda>(y, x). ((1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)),
+                                        (1-x)*a + x*b)) \<and>
+                       g1 piecewise_C1_differentiable_on {a .. b} \<and>
+                       g2 piecewise_C1_differentiable_on {a .. b}"
+    using assms typeII_twoCube_def by auto
+  have minus_cont:"continuous_on {a..b} (g1 - g2)"
+    by (auto simp add: C_def continuous_on_diff piecewise_C1_differentiable_on_imp_continuous_on)
+  have "a<b" using C_def by simp
+  have g1_to_g2:"{y. g2 x \<le> y \<and> y\<le> g1 x} = {g2 x..g1 x}" for x
+    by(auto)
+  have "(\<exists>z\<in>{0..1}. x = a + (b-a)*z) = (x \<in> {a..b})" for x
+    by (metis (mono_tags, lifting) C_def add_scale_img image_iff)
+  hence 2: "(\<exists>z\<in>{0..1}. x = (1-z)*a + z*b) = (x \<in> {a..b})" for x
+    by (simp add: algebra_simps)
+  have "(x,y) \<in> cubeImage C \<Longrightarrow> \<exists>z\<in>{0..1}. y = (1-z)*a + z*b" for x y
+    using box_real(2) image_def cubeImage_def C_def by force
+  hence cubeImage_x:"(x,y) \<in> cubeImage C \<Longrightarrow> y \<in> {a..b}" for x y
+    using "2" by blast
+  hence "y \<notin> {a..b} \<Longrightarrow>{x. (x, y) \<in> cubeImage C} = {}" for y
+    by blast
+  hence x_notin_a_b:"y \<notin> {a..b} \<Longrightarrow> measure lebesgue {x. (x, y) \<in> cubeImage C} = 0" for y
+    by auto
+  have 3: "(x,y)\<in> cubeImage C = (\<exists>(w,z)\<in>unit_cube. (x,y) = ((1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)),(1-w)*a + w*b))" for x y
+    using C_def cubeImage_def by auto
+  have "y\<in>{a..b} \<Longrightarrow> ((x,y)\<in> cubeImage C) = (g2 y \<le> x \<and> x \<le> g1 y)" for x y
+  proof
+    assume "(x,y)\<in> cubeImage C"
+    then obtain w z where wz_def: "(w,z)\<in>unit_cube \<and> (x,y) = ((1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)),(1-w)*a + w*b)"
+      using 3 by auto
+    hence "z\<in>{0..1}" by auto
+    have 4:"0 \<le> (g1 y - g2 y) * z"
+      by (meson C_def \<open>(x, y) \<in> cubeImage C\<close> \<open>z \<in> {0..1}\<close> atLeastAtMost_iff cubeImage_x diff_ge_0_iff_ge mult_nonneg_nonneg)
+    hence "g2 y + (g1 y - g2 y) * z \<le> g2 y + (g1 y - g2 y)"
+      by (metis C_def \<open>(x, y) \<in> cubeImage C\<close> \<open>z \<in> {0..1}\<close> add.commute atLeastAtMost_iff cubeImage_x diff_add_cancel diff_ge_0_iff_ge le_diff_eq mult_left_le)
+    hence 5: "g2 y + (g1 y - g2 y) * z \<le> g1 y"
+      by simp
+    have 6: "y\<in>{a..b}"
+      using \<open>(x, y) \<in> cubeImage C\<close> cubeImage_x by blast
+    have "y = (1-w)*a + w*b" using wz_def by simp
+    hence "(x,y) = ((1-z)*g2 y + z * g1 y,y)" using wz_def by auto
+    hence "x = g2 y + (g1 y - g2 y) * z" by (auto simp add: algebra_simps)
+    thus "(x,y)\<in> cubeImage C \<Longrightarrow> g2 y \<le> x \<and> x \<le> g1 y"
+      using \<open>z \<in> {0..1}\<close> by(auto simp add: cubeImage_x 4 5 6 C_def)
+  next
+    assume "(g2 y \<le> x \<and> x \<le> g1 y)"
+    hence y_in:"x \<in> {g2 y.. g1 y}" by auto
+    assume asm2: "y\<in>{a..b}"
+    hence "\<exists>w\<in>{0..1}. y = (1-w)*a + w*b"
+      using "2" by blast
+    then obtain w where w_def:"w\<in>{0..1} \<and> y = (1-w)*a + w*b" by auto
+    have "g2 y \<le> g1 y" using C_def asm2 by auto
+    hence "\<exists>z\<in>{0..1}. x = g2 y + (g1 y - g2 y)*z"
+      using add_scale_img'[of "g2 y" "g1 y"] y_in by auto
+    hence "\<exists>z\<in>{0..1}. x = (1 - z) * (g2 y) + z * (g1 y)"
+      by (auto simp add: algebra_simps)
+    then obtain z where z_def:"z\<in>{0..1} \<and> x = (1 - z) * (g2 y) + z * (g1 y)" by auto
+    hence "(x,y) = ((1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)),(1-w)*a + w*b)"
+      using w_def by auto
+    hence "\<exists>(w,z)\<in>unit_cube. (x,y) = ((1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)),(1-w)*a + w*b)"
+      using w_def z_def by auto
+    thus "(x,y) \<in> cubeImage C" using cubeImage_def C_def by auto
+  qed
+  hence "y\<in>{a..b} \<Longrightarrow> {x. (x,y)\<in> cubeImage C} = {x. g2 y \<le> x \<and> x \<le> g1 y}" for y
+    by auto
+  hence "y\<in>{a..b} \<Longrightarrow> measure lebesgue {x. (x, y) \<in> cubeImage C} = measure lebesgue {x. g2 y \<le> x \<and> x \<le> g1 y}" for y
+    by(auto)
+  hence measure_s\<^sub>x: "y\<in>{a..b} \<Longrightarrow> measure lebesgue {x. (x, y) \<in> cubeImage C} = g1 y - g2 y" for y
+    by(simp add: g1_to_g2 C_def)
+  have measure_indicat:"(\<lambda>y. measure lebesgue {x. (x, y) \<in> cubeImage C}) y = (\<lambda>x. indicat_real {a..b} y *\<^sub>R (g1 y - g2 y)) y" for y
+    by (metis indicator_simps(1) indicator_simps(2) measure_s\<^sub>x mult_cancel_right1 mult_eq_0_iff real_scaleR_def x_notin_a_b)
+  thus "(\<lambda>y. measure lebesgue {x. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
+    apply(subst measure_indicat)
+    apply(rule borel_measurable_continuous_on_indicator)
+    using minus_cont by(auto)
+qed
+
+lemma
+  assumes "valid_typeI_division s two_chain"
+  shows "(\<lambda>x. measure lebesgue {y. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel" "compact s"
+proof -
+  find_theorems "continuous_on" "typeI_twoCube"
+  have "\<forall>c\<in>two_chain. \<exists>a b g1 g2. a < b \<and> (\<forall>x \<in> {a..b}. g2 x \<le> g1 x) \<and>
+                       c = (\<lambda>(x,y). ((1-x)*a + x*b,
+                                        (1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)))) \<and>
+                       g1 piecewise_C1_differentiable_on {a..b} \<and>
+                       g2 piecewise_C1_differentiable_on {a..b}"
+    using assms by(simp add: valid_two_chain_def typeI_twoCube_def)
+  have "continuous_on UNIV (\<lambda>x. (1-fst x)*a + (fst x)*b)" for a b::real
+    
+  hence "\<forall>c\<in>two_chain. continuous_on unit_cube c"
+    using continuous_on_Pair
+    
+
+    apply(rule continuous_on_Pair)
+    using assms unfolding typeI_twoCube_def
+    have "\<forall>c\<in>two_chain. compact (cubeImage c)"
+      find_theorems "continuous_on" "(_,_)"
+    apply(auto simp add: cubeImage_def assms valid)
+
+lemma closed_cross_sections:
+  fixes s::"(real\<times>real) set"
+  assumes "closed s"
+  shows "closed {y. (x,y) \<in> s}" "closed {y. (y,x) \<in> s}"
+proof -
+  have 0: "(\<forall>z l. (\<forall>n. z n \<in> s) \<and> z \<longlonglongrightarrow> l \<longrightarrow> l \<in> s)"
+    using \<open>closed s\<close> closed_sequential_limits by auto
+  hence z_pair_tends1: "\<forall>z l. (\<forall>n. (x,z n) \<in> s) \<and> (\<lambda>n. (x,z n)) \<longlonglongrightarrow> (x,l) \<longrightarrow> (x,l)\<in>s"
+    by(auto)
+  have "(\<forall>n. z n \<in> {y. (x,y) \<in> s}) \<and> z \<longlonglongrightarrow> l \<longrightarrow> l \<in> {y. (x,y) \<in> s}" for z l
+  proof -
+    have "(\<forall>n. z n \<in> {y. (x,y) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (\<lambda>n. (x,z n)) \<longlonglongrightarrow> (x,l)"
+      by (simp add: tendsto_Pair)
+    hence "(\<forall>n. z n \<in> {y. (x,y) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (x,l) \<in> s" using z_pair_tends1
+      by auto
+    thus ?thesis by auto
+  qed
+  thus "closed {y. (x,y) \<in> s}" using closed_sequential_limits[of "{y. (x, y) \<in> s}"]
+    by auto
+  have z_pair_tends2: "\<forall>z l. (\<forall>n. (z n, x) \<in> s) \<and> (\<lambda>n. (z n, x)) \<longlonglongrightarrow> (l,x) \<longrightarrow> (l,x)\<in>s"
+    using 0 by auto
+  have "(\<forall>n. z n \<in> {y. (y,x) \<in> s}) \<and> z \<longlonglongrightarrow> l \<longrightarrow> l \<in> {y. (y, x) \<in> s}" for z l
+  proof -
+    have "(\<forall>n. z n \<in> {y. (y,x) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (\<lambda>n. (z n,x)) \<longlonglongrightarrow> (l,x)"
+      by (simp add: tendsto_Pair)
+    hence "(\<forall>n. z n \<in> {y. (y,x) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (l,x) \<in> s" using z_pair_tends2
+      by auto
+    thus ?thesis by auto
+  qed
+  thus "closed {y. (y,x) \<in> s}" using closed_sequential_limits[of "{y. (y,x) \<in> s}"]
+    by auto
+qed
+
+lemma bounded_cross_sections:
+  fixes s::"(real\<times>real) set"
+  assumes "bounded s"
+  shows "bounded {y. (x,y) \<in> s}" "bounded {y. (y,x) \<in> s}"
+proof -
+  have x0: "bounded {(a, b). a = x \<and> (a, b) \<in> s}" for x
+    apply(rule bounded_subset[OF assms])
+    by blast
+  have x1: "{y. (x,y) \<in> s} = snd ` {(a,b). (a = x \<and> (a,b)\<in>s)}" for x
+    by(auto simp add: image_def snd_def)
+  show "bounded {y. (x,y) \<in> s}" for x
+    by(simp only: x0 x1 bounded_snd)
+  have y0: "bounded {(a, b). b = x \<and> (a, b) \<in> s}" for x
+    apply(rule bounded_subset[OF assms])
+    by blast
+  have y1: "{y. (y,x) \<in> s} = fst ` {(a,b). (b = x \<and> (a,b)\<in>s)}" for x
+    by(auto simp add: image_def fst_def)
+  show "bounded {y. (y,x) \<in> s}" for x
+    by(simp only: y0 y1 bounded_fst)
+qed
+
+lemma compact_cross_sections:
+fixes s::"(real\<times>real) set"
+  assumes "compact s"
+  shows "compact {y. (x,y) \<in> s}" "compact {y. (y,x) \<in> s}"
+proof - 
+  show "compact {y. (x,y) \<in> s}"
+    using bounded_cross_sections closed_cross_sections assms compact_eq_bounded_closed
+    by metis
+  show "compact {y. (y,x) \<in> s}"
+    using bounded_cross_sections closed_cross_sections assms compact_eq_bounded_closed
+    by metis
+qed
 
 lemma p_deriv_from_has_p_deriv: assumes "has_partial_vector_derivative F b F' p"
   shows "partial_vector_derivative F b p = F'"
   by (metis assms has_partial_vector_derivative_def partial_vector_derivative_def vector_derivative_at)
 
-find_theorems "closed _" "_ ` _" continuous_on
-
-find_theorems name:cont "the_inv_into"
-
-lemma fixes f::"(real\<times>real) \<Rightarrow> (real\<times>real)"
-  assumes "continuous_on s f" "compact s"
-  shows "compact (f ` s)"
-  by (auto simp add: compact_continuous_image assms)
-(*The lemma above tells us that if we condition that each two chain be a continuous map, then their images will be compact,
-and therefore s will be closed and bounded, and so the union of these will be compact (as there are a finite number of two chains)
-and so each cross section s\<^sub>x and s\<^sub>y will be a closed set (and so lebesgue measurable)*)
-
-
 lemma
   fixes s :: "(real\<times>real) set"
-  assumes "s \<in> borel"
+  assumes "compact s" "(\<lambda>x. measure lebesgue {y. (x, y) \<in> s}) \<in> borel_measurable borel" (*this assumption will follow from s have typeI division*)
   shows "analytically_valid s (\<lambda> x. - snd x) (0,1)"
 proof -
-  have minus_y_zero: "has_partial_vector_derivative (\<lambda>x. -snd x) (0, 1) (-1) (a, b)" for a b ::real
+  have "has_partial_vector_derivative (\<lambda>x. -snd x) (0, 1) (-1) (a, b)" for a b ::real
     by(auto simp add: has_partial_vector_derivative_def has_vector_derivative_minus)
   hence has_p_deriv: "has_partial_vector_derivative (\<lambda>x. - snd x) (0, 1) (-1) z" for z ::"real\<times>real"
     using prod_cases by blast
-  hence ex_has_p_deriv: "\<exists>F'. has_partial_vector_derivative (\<lambda>x. - snd x) (0, 1) F' z" for z ::"real\<times>real"
-    by blast
+  hence p_diffble: "partially_vector_differentiable (\<lambda>x. - snd x) (0, 1) (a, b)" for a b ::real
+    unfolding partially_vector_differentiable_def by auto
   have cont_on: "continuous_on s (\<lambda>x. - snd x)"
     using continuous_on_minus[OF continuous_on_snd[OF continuous_on_id']]
     by (simp add: case_prod_unfold)
   have p_deriv_minus_1: "partial_vector_derivative (\<lambda>x. - snd x) (0, 1) p = - 1" for p ::"real\<times>real"
-    apply -
-    apply(rule p_deriv_from_has_p_deriv)
-    using has_p_deriv by(auto)
-  hence "(\<lambda>p. partial_vector_derivative (\<lambda>x. - snd x) (0, 1) p * indicat_real s p) = (\<lambda>p. - indicat_real s p)"
-    by auto
-  hence integrable: "integrable lborel (\<lambda>p. partial_vector_derivative (\<lambda>x. - snd x) (0, 1) p * indicat_real s p)"
-    apply(simp)
-    apply(intro integrable_real_indicator assms emeasure_bounded_finite)
-    apply(subst sets_lborel)
-    by(rule assms)
-  have Basis_minus_y:"{(1::real, 0), (0, 1)} - {(0, 1)} = {(1,0)}"
-    by auto
-  hence sum_Basis_minus_y: "\<Sum> ({(1::real, 0), (0, 1)} - {(0, 1)}) = (1,0)"
-    apply (subst Basis_minus_y)
-    by(simp)
-  have s\<^sub>x_def: "(\<lambda>y. indicat_real s (x, y)) = indicat_real {y. (x,y)\<in>s}" for x ::real and s
+    using has_p_deriv p_deriv_from_has_p_deriv by blast
+  have integrable: "integrable lborel (\<lambda>p. partial_vector_derivative (\<lambda>x. - snd x) (0, 1) p * indicat_real s p)"
+    apply(simp add: p_deriv_minus_1 subst[of "(\<lambda>p. - indicat_real s p)"])
+    using integrable_real_indicator assms
+    by (metis borel_compact emeasure_compact_finite sets_lborel)
+  have sum_Basis_minus_y: "\<Sum> ({(1::real, 0), (0, 1)} - {(0, 1)}) = (1,0)"
+    apply(rule subst[of "{(1,0)}"])
+    by(auto)
+  have s\<^sub>x_indicat: "(\<lambda>y. indicat_real s (x, y)) = indicat_real {y. (x,y)\<in>s}" for x ::real
     apply(subst indicator_def)+
     by fastforce
-  find_theorems "closed" name: trans
-  find_theorems "closed (_ ::(real set))"
-  find_theorems 
-  have "closed {x. (1::real,0::real) \<bullet> x = 0}"
-    by (simp add: closed_hyperplane)
-  moreover have "{(a::real,b::real). a = 0} = {x. (1::real,0::real) \<bullet> x = 0}"
-    by auto
-  ultimately have 0: "closed {(a::real,b::real). a = 0}"
-    by auto
-  have "{(a::real,b::real). a = c} = ((+) (c,0)) `  {(a,b). a = 0}" for c ::real
-    by(auto split: prod.splits simp add: image_def)
-  have "closed (((+) (c,0)) `  {(a,b). a = 0})" for x::real and c
-    using closed_translation[OF 0]
-    apply(rule closed_translation)
-    thm closed_translation
-    apply(simp add:)
-    sorry
-
-  have "{(a,b). a = x \<and> (a,b) \<in> s} = s \<inter> {(a,b). a = x}" for x
-    by blast
-  have "snd ` {(a,b). a = x \<and> (a,b) \<in> s} =  {y. (x, y) \<in> s}" for x
-    by(auto simp add: image_def snd_def)
-  have "{y. (x, y) \<in> s} \<in> lmeasurable" for x
-    thm sets.Int
-    using real_vector.linear_snd
-    apply -
-(*To apply these theorems we need linear f and f goes from R2 to R2, not R2 to R*)
-    find_theorems "linear snd"
-    apply(rule subst)
-    find_theorems "_\<in>lmeasurable" "_`_"
-     apply(rule conjunct1)
-    thm measure_linear_sufficient
-    find_theorems "_ -`_" closed
-    find_theorems "the_inv_into" name:cont
-
-    (*inj and cont implies inverse is continuous so images of cboxes are closed*)
-    apply(rule Equivalence_Lebesgue_Henstock_Integration.measure_linear_sufficient)
-    apply(rule measurable_linear_image)
-    apply(rule sets.Int)
+  have s\<^sub>x_emb_closed: "closed {y. (x, y) \<in> s}" for x::real
+    by (auto simp add: closed_cross_sections compact_imp_closed assms)
+  have "bounded {y. (x, y) \<in> s}" for x::real
+    by (simp add: bounded_cross_sections compact_imp_bounded assms)
+  hence "emeasure lborel {y. (x, y) \<in> s} < \<infinity>" for x::real
+    using emeasure_bounded_finite by auto
+  hence s\<^sub>x_finite_lebesgue: "{y. (x, y) \<in> s} \<in> {A \<in> sets lebesgue. emeasure lebesgue A < \<infinity>}" for x::real
+    by (auto simp add: s\<^sub>x_emb_closed emeasure_bounded_finite)
+  have 4: "(\<lambda>x. integral UNIV (\<lambda>y. partial_vector_derivative (\<lambda>x. - snd x) (0, 1) ((0::real, y) + x *\<^sub>R \<Sum> (Basis - {(0, 1)})) * indicat_real s ((0, y) + x *\<^sub>R \<Sum> (Basis - {(0, 1)}))))
+              = (\<lambda>x. - integral UNIV (indicat_real {y. (x, y) \<in> s}))"
+    apply(simp only: p_deriv_minus_1 real_pair_basis sum_Basis_minus_y scaleR_Pair sym[OF s\<^sub>x_indicat])
+    by(auto)
+  have borel_measurable: "(\<lambda>x. integral UNIV (\<lambda>y. partial_vector_derivative (\<lambda>x. - snd x) (0, 1) ((0::real, y) + x *\<^sub>R \<Sum> (Basis - {(0, 1)})) * indicat_real s ((0, y) + x *\<^sub>R \<Sum> (Basis - {(0, 1)})))) \<in> borel_measurable borel"
+    apply(simp add: 4)
+    apply(subst sym[OF lmeasure_integral_UNIV])
+    apply(simp only: fmeasurable_def s\<^sub>x_finite_lebesgue)
+    by (auto simp add: assms(2) fmeasurable_def s\<^sub>x_finite_lebesgue)
   show ?thesis
-  apply(subst analytically_valid_def)
-    apply(rule conjI)
-    apply(simp)
-     apply(subst partially_vector_differentiable_def)
-     apply(simp add: ex_has_p_deriv)
-    apply(rule conjI)
-     apply(rule cont_on)
-    apply(rule conjI)
-     apply(rule integrable)
-    apply(subst p_deriv_minus_1)
-    apply(subst real_pair_basis)
-    apply(subst sum_Basis_minus_y)
-    apply(subst scaleR_Pair)+
-    apply(simp)
-    apply(subst s\<^sub>x_def)
-    apply(subst sym[OF Equivalence_Lebesgue_Henstock_Integration.lmeasure_integral_UNIV])
-     apply(subst fmeasurable_def)
-      (*each cross section s\<^sub>x needs to be lebesgue measurable for analytically valid s f j to hold
-        likewise for s\<^sub>y.*)
-    find_theorems name: "section"
-    find_theorems "{y. (?x,y) \<in> ?s}"
-    find_theorems "emeasure lebesgue"
-    term fmeasurable
-    find_theorems "?s \<inter> ?t \<in> sets _"
-    find_theorems "_ \<in> lmeasurable"
-    find_theorems "measurable" snd
+    apply(subst analytically_valid_def)
+    by(auto simp add: p_diffble cont_on integrable borel_measurable)
+qed
 
-    find_theorems "norm::(_ \<times> _) \<Rightarrow> _"
+locale isop1 = R2 i j + G1: green_typeI_typeII_chain s i j "(\<lambda> (x,y). (-y , 0))" two_chain_typeI two_chain_typeII for i j s two_chain_typeI two_chain_typeII
+begin
 
-locale isop1 = R2 i j + G1: green_typeI_typeII_chain s i j "(\<lambda> (x,y). (-y , 0))" two_chain_typeI two_chain_typeII for i j s two_chain_typeI two_chain_typeII +
+lemma area_as_line_integral:
   assumes
-    green_assumptions:
       "gen_division s (cubeImage ` two_chain_typeI)"
       "gen_division s (cubeImage ` two_chain_typeII)"
       "two_chain_horizontal_boundary two_chain_typeI \<subseteq> one_chain_typeI"
@@ -135,9 +320,6 @@ locale isop1 = R2 i j + G1: green_typeI_typeII_chain s i j "(\<lambda> (x,y). (-
       "one_chain_typeI \<subseteq> two_chain_boundary two_chain_typeI"
       "one_chain_typeII \<subseteq> two_chain_boundary two_chain_typeII"
       "common_boundary_sudivision_exists one_chain_typeI one_chain_typeII"
-begin
-
-lemma area_C:
   shows "integral s (\<lambda>x. 1) = one_chain_line_integral (\<lambda> (x,y). (-y , 0)) {i} one_chain_typeI"
     "integral s (\<lambda>x. 1) = one_chain_line_integral (\<lambda> (x,y). (-y , 0)) {i} one_chain_typeII"
 proof -
@@ -162,11 +344,11 @@ proof -
     apply(subst curl_F)
      apply(rule Green.green_typeI_typeII_chain.GreenThm_typeI_typeII_divisible_region_equivallent_boundary)
             apply(rule G1.green_typeI_typeII_chain_axioms)
-           apply(rule green_assumptions)+
+           apply(rule assms)+
     apply(subst curl_F)
-    apply(rule Green.green_typeI_typeII_chain.GreenThm_typeI_typeII_divisible_region_equivallent_boundary)
-           apply(rule G1.green_typeI_typeII_chain_axioms)
-    by(rule green_assumptions)+
+    apply(rule Green.green_typeI_typeII_chain.GreenThm_typeI_typeII_divisible_region_equivallent_boundary[of _ _ _ _ _ _ one_chain_typeI])
+           apply(rule G1.green_typeI_typeII_chain_axioms)                                                                                                                         
+    by(rule assms)+
   show "integral s (\<lambda>x. 1) = one_chain_line_integral (\<lambda> (x,y). (-y , 0)) {i} one_chain_typeI"
     using i_is_x_axis j_is_y_axis
     apply(subst area_from_F(1))
@@ -179,12 +361,16 @@ proof -
     apply(simp add: one_chain_line_integral_def line_integral_def)
      apply(rule Finite_Cartesian_Product.sum_cong_aux)
     by (auto split: prod.splits intro: Henstock_Kurzweil_Integration.integral_cong)
-    qed
+qed
 end
 
 thm line_integral_def one_chain_line_integral_def
 
-locale isop2 = R2 i j + G1: green_typeI_typeII_chain s i j "(\<lambda> (x,y). (0 , x))" two_chain_typeI two_chain_typeII for i j s two_chain_typeI two_chain_typeII +
+locale isop2 = R2 i j + G1: green_typeI_typeII_chain s i j "(\<lambda> (x,y). (0 , x))" two_chain_typeI two_chain_typeII for i j s two_chain_typeI two_chain_typeII
+  
+begin
+
+lemma area_as_line_integral:
   assumes
     green_assumptions:
       "gen_division s (cubeImage ` two_chain_typeI)"
@@ -194,10 +380,7 @@ locale isop2 = R2 i j + G1: green_typeI_typeII_chain s i j "(\<lambda> (x,y). (0
       "one_chain_typeI \<subseteq> two_chain_boundary two_chain_typeI"
       "one_chain_typeII \<subseteq> two_chain_boundary two_chain_typeII"
       "common_boundary_sudivision_exists one_chain_typeI one_chain_typeII"
-begin
-
-lemma area_C:
-  shows "integral s (\<lambda>x. 1) = one_chain_line_integral (\<lambda> (x,y). (0 , x)) {j} one_chain_typeI"
+    shows "integral s (\<lambda>x. 1) = one_chain_line_integral (\<lambda> (x,y). (0 , x)) {j} one_chain_typeI"
     "integral s (\<lambda>x. 1) = one_chain_line_integral (\<lambda> (x,y). (0 , x)) {j} one_chain_typeII"
 proof -
   let ?F = "(\<lambda> (x,y). (0 , x))"
@@ -221,11 +404,11 @@ proof -
     apply(subst curl_F)
      apply(rule Green.green_typeI_typeII_chain.GreenThm_typeI_typeII_divisible_region_equivallent_boundary)
             apply(rule G1.green_typeI_typeII_chain_axioms)
-           apply(rule green_assumptions)+
+           apply(rule assms)+
     apply(subst curl_F)
-    apply(rule Green.green_typeI_typeII_chain.GreenThm_typeI_typeII_divisible_region_equivallent_boundary)
+    apply(rule Green.green_typeI_typeII_chain.GreenThm_typeI_typeII_divisible_region_equivallent_boundary[of _ _ _ _ _ _ one_chain_typeI])
            apply(rule G1.green_typeI_typeII_chain_axioms)
-    by(rule green_assumptions)+
+    by(rule assms)+
   show "integral s (\<lambda>x. 1) = one_chain_line_integral (\<lambda> (x,y). (0 , x)) {j} one_chain_typeI"
     using i_is_x_axis j_is_y_axis
     apply(subst area_from_F(1))
@@ -241,21 +424,104 @@ proof -
 qed
 end
 
-thm isop1.area_C isop2.area_C
+thm isop1.area_as_line_integral isop2.area_as_line_integral
 thm isop1_def
-thm isop1_axioms_def
 
-locale isop = isop1 i j s two_chain_typeI two_chain_typeII + isop2 i j s two_chain_typeI two_chain_typeII for s i j two_chain_typeI two_chain_typeII
+locale isop = isop1 i j s two_chain_typeI two_chain_typeII + isop2 i j s two_chain_typeI two_chain_typeII for s i j two_chain_typeI two_chain_typeII +
+assumes
+    green_assumptions:
+      "gen_division s (cubeImage ` two_chain_typeI)"
+      "gen_division s (cubeImage ` two_chain_typeII)"
+      "two_chain_horizontal_boundary two_chain_typeI \<subseteq> one_chain_typeI"
+      "two_chain_vertical_boundary two_chain_typeII \<subseteq> one_chain_typeII" 
+      "one_chain_typeI \<subseteq> two_chain_boundary two_chain_typeI"
+      "one_chain_typeII \<subseteq> two_chain_boundary two_chain_typeII"
+      "common_boundary_sudivision_exists one_chain_typeI one_chain_typeII"
 begin
+(*Unsure which form (i.e which combinations of one_chain_typeI and one_chain_typeII) of this lemma I will need in the final proof*)
 lemma shows area_from_line_integral: "integral s (\<lambda>x. 1) = (1/2) * (one_chain_line_integral (\<lambda>(x,y). (0,x)) {j} one_chain_typeI + one_chain_line_integral (\<lambda>(x,y). (-y,0)) {i} one_chain_typeI)"
 proof -
-  show ?thesis using local.isop2_axioms local.isop1_axioms isop1.area_C isop2.area_C by auto
+  thm isop1.area_as_line_integral
+  have "integral s (\<lambda>x. 1) = one_chain_line_integral (\<lambda>(x, y). (- y, 0)) {i} one_chain_typeI"
+    apply(rule isop1.area_as_line_integral)
+    apply(rule isop1_axioms)
+    by(rule green_assumptions isop1_axioms)+
+  moreover have "integral s (\<lambda>x. 1) = one_chain_line_integral (\<lambda>(x,y). (0,x)) {j} one_chain_typeI"
+    apply(rule isop2.area_as_line_integral)
+    apply(rule isop2_axioms)
+    by(rule green_assumptions isop1_axioms)+
+  ultimately show ?thesis by auto
 qed
 end
 
+
+lemma geom_le_arith_mean:
+  fixes a::real and b::real
+  assumes a: "a\<ge>0" and b: "b\<ge>0"
+  shows "sqrt (a*b) \<le> (a + b)/2 \<and> (sqrt (a*b) = (a + b)/2 \<longleftrightarrow> a = b)"
+proof-
+  have "(a-b)\<^sup>2 \<ge> 0" by auto
+  hence "a * (b * 2) \<le> a\<^sup>2 + b\<^sup>2"
+    by (auto simp add: Power.comm_ring_1_class.power2_diff)
+  hence "a*b \<le> ((a+b)/2)\<^sup>2" using a b
+    by (auto simp add: Power.comm_semiring_1_class.power2_sum Power.field_class.power_divide)
+  hence 0: "sqrt (a*b) \<le> (a + b)/2" using a b
+    apply(subst sym[OF Groups.ordered_ab_group_add_abs_class.abs_of_nonneg[of "(a + b)/2"]])
+     apply(simp)
+    apply(subst sym [OF NthRoot.root_abs_power[of 2]])
+    by (auto simp add: sqrt_def NthRoot.real_root_abs)
+  have "(a-b)\<^sup>2 = 0 \<longleftrightarrow> a = b" by auto
+  hence "a * (b * 2) = a\<^sup>2 + b\<^sup>2 \<longleftrightarrow> a = b"
+    by (auto simp add: Power.comm_ring_1_class.power2_diff)
+  hence "a*b = ((a+b)/2)\<^sup>2 \<longleftrightarrow> a = b" using a b
+    by (auto simp add: Power.comm_semiring_1_class.power2_sum Power.field_class.power_divide)
+  hence 1: "sqrt (a*b) = (a + b)/2 \<longleftrightarrow> a = b" using a b
+    apply(subst sym[OF Groups.ordered_ab_group_add_abs_class.abs_of_nonneg[of "(a + b)/2"]])
+     apply(simp)
+    apply(subst sym [OF NthRoot.root_abs_power[of 2]])
+    by (auto simp add: sqrt_def NthRoot.real_root_abs)
+  thus ?thesis using 0 1
+    by auto
+qed
+
+lemma
+  fixes A s r:: real
+  assumes "A + pi*r\<^sup>2 \<le> l*r" "A\<ge>0" "l\<ge>0" "r>0"
+  shows "l\<^sup>2 - 4*pi*A \<ge> 0" "l\<^sup>2 - 4*pi*A = 0 \<Longrightarrow> l = 2*pi*r" (*Setting l = 2\<times>pi\<times>r, we get A \<le> pi\<times>r\<^sup>2 *)
+proof -
+  have l_r_sqr:"(l*r/2) ^ 2 = l\<^sup>2 * r\<^sup>2 / 4"
+    by (simp add: power_divide power_mult_distrib)
+  have 0: "sqrt (A*(pi*r\<^sup>2)) \<le> (A + (pi*r\<^sup>2))/2  \<and> (sqrt (A*(pi*r\<^sup>2)) = (A + pi*r\<^sup>2)/2 \<longleftrightarrow> A = pi*r\<^sup>2)"
+    using geom_le_arith_mean assms(2) by fastforce
+  hence "A*(pi*r\<^sup>2) \<le> (l*r/2)\<^sup>2"
+    using sqrt_def sqrt_le_D assms(1) by force
+  hence "A*(pi*r\<^sup>2)*4 \<le> l\<^sup>2 * r\<^sup>2"
+    using l_r_sqr by linarith
+  thus "l\<^sup>2 - 4*pi*A \<ge> 0"
+    using assms(4) by (auto simp add: mult.commute mult.left_commute)
+  have "l\<^sup>2 - 4*pi*A = 0 \<longleftrightarrow> (4*pi*A)*r\<^sup>2 = l\<^sup>2 * r\<^sup>2"
+    using assms(4) by auto
+  hence "l\<^sup>2 - 4*pi*A = 0 \<longleftrightarrow> A*(pi*r\<^sup>2)*4 = l\<^sup>2 * r\<^sup>2"
+    by (simp add: assms(4) mult.commute mult.left_commute)
+  hence "l\<^sup>2 - 4*pi*A = 0 \<longleftrightarrow> A*(pi*r\<^sup>2) = l\<^sup>2 * r\<^sup>2 / 4"
+    using eq_divide_eq_numeral1(1) by simp
+  hence "l\<^sup>2 - 4*pi*A = 0 \<longleftrightarrow> sqrt (A*(pi*r\<^sup>2)) = sqrt (l\<^sup>2 * r\<^sup>2 / 4)"
+    using real_sqrt_eq_iff by auto
+  hence "l\<^sup>2 - 4*pi*A = 0 \<longleftrightarrow> sqrt (A*(pi*r\<^sup>2)) = l * r / 2"
+    using l_r_sqr real_sqrt_unique[of "l*r/2"] assms by(auto)
+  hence "l\<^sup>2 - 4*pi*A = 0 \<Longrightarrow> A = pi*r\<^sup>2"
+    using assms(1) 0 by auto
+  hence "l\<^sup>2 - 4*pi*A = 0 \<Longrightarrow> l\<^sup>2 = 4*pi\<^sup>2*r\<^sup>2"
+    by (simp add: power2_eq_square)
+  moreover have "4*pi\<^sup>2*r\<^sup>2 = (2*pi*r)\<^sup>2"
+    by (metis four_x_squared power_mult_distrib)
+  ultimately show "l\<^sup>2 - 4*pi*A = 0 \<Longrightarrow> l = 2*pi*r"
+    using assms by auto
+qed
+
 lemma func_square_sum :
-  fixes w :: "real \<Rightarrow> real" and x :: "real \<Rightarrow> real" and y :: "real \<Rightarrow> real" and z :: "real \<Rightarrow> real"
-  shows "\<forall> t. (x t * y t - z t * w t)\<^sup>2 \<le> ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) \<and> ((x t * y t - z t * w t)\<^sup>2 = ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) \<longleftrightarrow> x t* w t= - z t* y t)"
+  fixes w x y z :: "real \<Rightarrow> real"
+  shows "\<forall> t. (x t * y t - z t * w t)\<^sup>2 \<le> ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) \<and> ((x t * y t - z t * w t)\<^sup>2 = ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) \<longleftrightarrow> x t* w t = - z t* y t)"
 proof
   fix t
   let ?w = "w t"
@@ -271,34 +537,28 @@ proof
   show "(?x*?y - ?z*?w)\<^sup>2 \<le> (?x\<^sup>2 + ?z\<^sup>2)*(?w\<^sup>2 + ?y\<^sup>2) \<and> ((?x*?y - ?z*?w)\<^sup>2 = (?x\<^sup>2 + ?z\<^sup>2)*(?w\<^sup>2 + ?y\<^sup>2) \<longleftrightarrow> ?x*?w = -?z*?y)" using 1 2 by auto
 qed
 
-lemma geom_le_arith_mean:
-  fixes a::real and b::real
-  assumes a: "a\<ge>0" and b: "b\<ge>0"
-  shows "root 2 (a*b) \<le> (a + b)/2 \<and> (root 2 (a*b) = (a + b)/2 \<longleftrightarrow> a = b)"
-proof-
-  have "(a-b)\<^sup>2 \<ge> 0" by auto
-  hence "a * (b * 2) \<le> a\<^sup>2 + b\<^sup>2"
-    by (auto simp add: Power.comm_ring_1_class.power2_diff)
-  hence "a*b \<le> ((a+b)/2)\<^sup>2" using a b
-    by (auto simp add: Power.comm_semiring_1_class.power2_sum Power.field_class.power_divide)
-  hence 0: "root 2 (a*b) \<le> (a + b)/2" using a b
-    apply(subst sym[OF Groups.ordered_ab_group_add_abs_class.abs_of_nonneg[of "(a + b)/2"]])
-     apply(simp)
-    apply(subst sym [OF NthRoot.root_abs_power[of 2]])
-    by (auto simp add: NthRoot.real_root_abs)
-  have "(a-b)\<^sup>2 = 0 \<longleftrightarrow> a = b" by auto
-  hence "a * (b * 2) = a\<^sup>2 + b\<^sup>2 \<longleftrightarrow> a = b"
-    by (auto simp add: Power.comm_ring_1_class.power2_diff)
-  hence "a*b = ((a+b)/2)\<^sup>2 \<longleftrightarrow> a = b" using a b
-    by (auto simp add: Power.comm_semiring_1_class.power2_sum Power.field_class.power_divide)
-  hence 1: "root 2 (a*b) = (a + b)/2 \<longleftrightarrow> a = b" using a b
-    apply(subst sym[OF Groups.ordered_ab_group_add_abs_class.abs_of_nonneg[of "(a + b)/2"]])
-     apply(simp)
-    apply(subst sym [OF NthRoot.root_abs_power[of 2]])
-    by (auto simp add: NthRoot.real_root_abs)
-  thus ?thesis using 0 1
-    by auto
+lemma
+  fixes w x y z :: "real \<Rightarrow> real" and S ::"real set"
+  assumes "integrable lebesgue (\<lambda>t. (x t * y t - z t * w t)\<^sup>2)" "integrable lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2))" "integral\<^sup>L lebesgue (\<lambda>t. (x t * y t - z t * w t)\<^sup>2) = integral\<^sup>L lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2))"
+  shows "AE t in lebesgue. (\<lambda>t. x t * w t) t = (\<lambda>t. - z t * y t) t"
+proof -
+  have "(x t * y t - z t * w t)\<^sup>2 \<le> ((x t)\<^sup>2 + (z t)\<^sup>2) * ((w t)\<^sup>2 + (y t)\<^sup>2)" for t
+    using func_square_sum[of x y z w] by blast
+  have "integrable lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2)"
+    by (simp add: assms)
+  moreover have "integral\<^sup>L lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2) = 0"
+    using assms by auto
+  ultimately have 0: "AE t in lebesgue. (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2) t = 0"
+    apply (subst sym[OF integral_nonneg_eq_0_iff_AE])
+    by(auto simp add: func_square_sum)
+  have "(((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2 = 0) = (x t * w t = - z t * y t)" for t
+    using func_square_sum by force
+  thus ?thesis using 0
+    by presburger
 qed
+
+find_theorems "integral\<^sup>L"
+find_theorems "AE x in lebesgue. _" name: Henstock
 
 (*
 Let p be a path, so p is a map from an interval I to the plane, p :  I \<rightarrow> \<real>\<^sup>2, and suppose it is injective on I (ignoring endpoints).
