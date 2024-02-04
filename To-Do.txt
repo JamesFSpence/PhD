@@ -1,8 +1,7 @@
 ----TO-DO----
 
 31/01
-Send Passport application
-Ask Dan and Hannah about leaving for Bonn
+Prove union of TypeI regions has measurable cross section function
 
 24/01
 Write progress report
