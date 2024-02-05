@@ -200,58 +200,44 @@ proof -
   show ?thesis
   proof (rule abcd_cases, goal_cases)
     case 1
-    then show ?case sorry
-  next
-    case 2
-    then show ?case sorry
-  next
-    case 3
-    then show ?case sorry
-  qed
-    assume case1: "a > d \<or> b < c"
-    then have "{a..b} \<inter> {c..d} = {}"
-      by force
+    then have "{a..b} \<inter> {c..d} = {}" by force
     hence "cubeImage C \<inter> cubeImage D = {}"
       using C_point D_point by blast
-    thus ?thesis
-      by simp
+    thus ?case by simp
   next
-    assume notcase1:"\<not> (a > d \<or> b < c)"
-    show ?thesis
-    proof cases
-      assume case2: "a = d \<or> b = c"
-      have "a = d \<Longrightarrow> {a..b} \<inter> {c..d} = {a}"
-        using \<open>a<b\<close> \<open>c<d\<close> by auto
-      moreover have "b = c \<Longrightarrow> {a..b} \<inter> {c..d} = {b}"
-        using \<open>a<b\<close> \<open>c<d\<close> by auto
-      ultimately have "p\<in> cubeImage C \<inter> cubeImage D \<Longrightarrow> fst p = a \<or> fst p = b" for p
-        using C_point D_point
-        by (metis IntD1 IntD2 atLeastAtMost_iff case2 nle_le)
-      hence "(measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) \<noteq> 0 \<Longrightarrow> x \<in> {a,b}" for x
-        by (metis (mono_tags, lifting) empty_Collect_eq fst_conv insertCI negligible_empty negligible_imp_measure0)
-      moreover have "negligible {a,b} \<and> {x. \<not> (measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) = 0} \<subseteq> {a,b}"
-        using calculation by blast
-      ultimately show ?thesis
-        using eventually_ae_filter_negligible by metis
-    next
-      assume "\<not> (a = d \<or> b = c)"
-      then have case3: "a < d \<and> b > c"
-        using notcase1 by auto
-      let ?I = "{max a c.. min b d}"
-      have "{a..b} \<inter> {c..d} = ?I"
-        by auto
-      have "max a c < min b d"
-        using case3 \<open>a<b\<close> \<open>c<d\<close> by auto
+    case 2
+    have "a = d \<Longrightarrow> {a..b} \<inter> {c..d} = {a}"
+      using \<open>a<b\<close> \<open>c<d\<close> by auto
+    moreover have "b = c \<Longrightarrow> {a..b} \<inter> {c..d} = {b}"
+      using \<open>a<b\<close> \<open>c<d\<close> by auto
+    ultimately have "p\<in> cubeImage C \<inter> cubeImage D \<Longrightarrow> fst p = a \<or> fst p = b" for p
+      using C_point D_point
+      by (metis IntD1 IntD2 atLeastAtMost_iff 2 nle_le)
+    hence "(measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) \<noteq> 0 \<Longrightarrow> x \<in> {a,b}" for x
+      by (metis (mono_tags, lifting) empty_Collect_eq fst_conv insertCI negligible_empty negligible_imp_measure0)
+    moreover have "negligible {a,b} \<and>
+              {x. \<not> (measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) = 0} \<subseteq> {a,b}"
+      using calculation by blast
+    ultimately show ?case
+      using eventually_ae_filter_negligible by metis
+  next
+    case 3
+    let ?I = "{max a c.. min b d}"
+    have "{a..b} \<inter> {c..d} = ?I"
+      by auto
+    have "max a c < min b d"
+      using 3 \<open>a<b\<close> \<open>c<d\<close> by auto
 (*intersection is a non-singleton interval*)
-      have "(\<forall>x\<in>?I. h1 x  \<le> g2 x) \<or> (\<forall>x\<in>?I. g1 x  \<le> h2 x)"
-        sorry
-      hence "(\<forall>x\<in>?I. measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)} = 0)"
-        sorry
-      hence "measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)} = 0" for x
-        sorry
-      thus ?thesis
-        by auto
-    qed
+    have "(\<forall>x\<in>?I. h1 x  \<le> g2 x) \<or> (\<forall>x\<in>?I. g1 x  \<le> h2 x)"
+      sorry
+    hence "(\<forall>x\<in>?I. measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)} = 0)"
+      sorry
+    hence "measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)} = 0" for x
+      sorry
+    thus ?thesis
+      by auto
+  qed
+qed
 
 (*
 lemma measurable_cross_section_typeI_div:
@@ -644,10 +630,7 @@ lemma func_square_sum :
   shows "\<forall> t. (x t * y t - z t * w t)\<^sup>2 \<le> ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) \<and> ((x t * y t - z t * w t)\<^sup>2 = ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) \<longleftrightarrow> x t* w t = - z t* y t)"
 proof
   fix t
-  let ?w = "w t"
-  let ?x = "x t"
-  let ?y = "y t"
-  let ?z = "z t"
+  let ?w = "w t" and ?x = "x t" and ?y = "y t" and ?z = "z t"
   have 0: "((?x\<^sup>2 + ?z\<^sup>2) * (?w\<^sup>2 + ?y\<^sup>2)) - (?x*?y - ?z*?w)\<^sup>2 = (?x*?w + ?z*?y)\<^sup>2"
     by (auto simp add: algebra_simps Power.comm_semiring_1_class.power2_sum Power.comm_ring_1_class.power2_diff)
   hence "... \<ge> 0"by simp
@@ -659,52 +642,29 @@ qed
 
 lemma
   fixes w x y z :: "real \<Rightarrow> real" and S ::"real set"
-  assumes "integrable lebesgue (\<lambda>t. (x t * y t - z t * w t)\<^sup>2)" "integrable lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2))" "integral\<^sup>L lebesgue (\<lambda>t. (x t * y t - z t * w t)\<^sup>2) = integral\<^sup>L lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2))"
+  assumes "integrable lebesgue (\<lambda>t. (x t * y t - z t * w t)\<^sup>2)"
+          "integrable lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2))"
+          "integral\<^sup>L lebesgue (\<lambda>t. (x t * y t - z t * w t)\<^sup>2) =
+           integral\<^sup>L lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2))"
   shows "AE t in lebesgue. (\<lambda>t. x t * w t) t = (\<lambda>t. - z t * y t) t"
 proof -
   have "(x t * y t - z t * w t)\<^sup>2 \<le> ((x t)\<^sup>2 + (z t)\<^sup>2) * ((w t)\<^sup>2 + (y t)\<^sup>2)" for t
     using func_square_sum[of x y z w] by blast
-  have "integrable lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2)"
+  have "integrable lebesgue
+            (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2)"
     by (simp add: assms)
-  moreover have "integral\<^sup>L lebesgue (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2) = 0"
+  moreover have "integral\<^sup>L lebesgue
+            (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2) = 0"
     using assms by auto
-  ultimately have 0: "AE t in lebesgue. (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2) t = 0"
+  ultimately have 0: "AE t in lebesgue.
+            (\<lambda>t. ((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2) t = 0"
     apply (subst sym[OF integral_nonneg_eq_0_iff_AE])
     by(auto simp add: func_square_sum)
-  have "(((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2 = 0) = (x t * w t = - z t * y t)" for t
+  have "(((x t)\<^sup>2 + (z t)\<^sup>2)*((w t)\<^sup>2 + (y t)\<^sup>2) - (x t * y t - z t * w t)\<^sup>2 = 0) =
+          (x t * w t = - z t * y t)" for t
     using func_square_sum by force
   thus ?thesis using 0
     by presburger
 qed
-
-(*
-Let p be a path, so p is a map from an interval I to the plane, p :  I \<rightarrow> \<real>\<^sup>2, and suppose it is injective on I (ignoring endpoints).
->>> inj_on p (I - {Max I})
-
-We want an arclength parametrisation, or at least a constant speed parametrisation for p on the interval I.
-So a function s : I \<rightarrow> J, such that p \<circ> s\<^sup>-\<^sup>1 : J \<rightarrow> \<real>\<^sup>2 has derivative of constant magnitude at all points in I.
-
-If s is defined as s(t) =  \<integral>\<^sub>a\<^sup>t sqrt((x')\<^sup>2 + (y')\<^sup>2), this will make p \<circ> s\<^sup>-\<^sup>1 the arclength parametrisation.
-We need s to have a well-defined inverse, so the integrand, sqrt((x')\<^sup>2 + (y')\<^sup>2), is never 0, i.e  p is always moving. 
-If we guarantee p is injective on the range I then logically the integrand should never be 0?
-We need a lemma which says "inj_on p I \<Longrightarrow> \<forall>t\<in>I. sqrt((x' t)\<^sup>2 + (y' t)\<^sup>2) \<noteq> 0"
-But is this true...
-
-I think we need "sqrt((x' t)\<^sup>2 + (y' t)\<^sup>2)" to be at least \<alpha> (where \<alpha> > 0) at all points so that
-s has a well-defined inverse. (Equivalently "sqrt((x')\<^sup>2 + (y')\<^sup>2)" is non-zero and continuous on a closed range.)
-
-If we have an \<alpha> > 0, st.  sqrt((x' t)\<^sup>2 + (y' t)\<^sup>2) > \<alpha> at all points t \<in> I,
-Then we have \<integral>\<^sub>a\<^sup>t sqrt((x')\<^sup>2 + (y')\<^sup>2) \<ge>  \<integral>\<^sub>a\<^sup>t \<alpha> = \<alpha> (t - a)
-
-Suppose b > a, and s(b) = s(
-a) (i.e s does not have a well-defined inverse),
-then \<integral>\<^sub>a\<^sup>b sqrt((x')\<^sup>2 + (y')\<^sup>2) \<ge>  \<integral>\<^sub>a\<^sup>b \<alpha> = (b-a)\<alpha> > 0 , giving a contradiction.
-So if we have an \<alpha> > 0, st.  sqrt((x' t)\<^sup>2 + (y' t)\<^sup>2) > \<alpha> at all points t \<in> I,
-this will guarantee that s is increasing and injective, which will guarantee a well-defined inverse.
-
-A regularly parametrised curve (RPC) is a smooth curve who's derivative never vanishes. We need our curve to be piecewise regularly parametrised.
 *)
-
-
-
 end
