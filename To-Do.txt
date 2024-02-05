@@ -1,7 +1,7 @@
 ----TO-DO----
 
 05/02
-Think about 9 month review
+Think about 9 month review by end of April
   - Draft of chapters
   - eg. summary of the problem, definitions, background, literature review
 Look into formalisations of algorithms
