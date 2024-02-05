@@ -2,6 +2,7 @@
 
 31/01
 Prove union of TypeI regions has measurable cross section function
+Read graph algorithms chapter Mohammad wrote
 
 24/01
 Write progress report
