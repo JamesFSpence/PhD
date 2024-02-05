@@ -79,7 +79,8 @@ lemma WP_speed_gr_0:
     unfolding speed_def well_parametrised_on_def
     by fastforce
 
-lemma func_gr_0_has_integral_gr_0: fixes f :: "real \<Rightarrow> real"
+lemma func_gr_0_has_integral_gr_0:
+  fixes f :: "real \<Rightarrow> real"
   assumes "a<b" "\<forall>t \<in>{a..b}. (f t > 0)" "\<forall>x\<in>{a..b}. isCont f x"
   shows "integral {a..b} f > 0"
 proof-
@@ -98,7 +99,7 @@ proof-
   thus ?thesis using \<open>(b-a)*L > 0\<close> by auto
 qed
 
-lemma negl_ge_le_minus_gt_le: "negligible ({r..s} - {r<..s})" for r::real and s
+lemma negl_ge_le_minus_gt_le:"negligible ({r..s} - {r<..s})" for r::real and s
 proof cases
   assume "r\<le>s"
   hence "{r..s} - {r<..s} = {r}" by (simp add: double_diff greaterThanAtMost_eq_atLeastAtMost_diff)
@@ -139,7 +140,8 @@ proof -
    by (metis continuous_at_imp_continuous_on continuous_on_eq)
 qed
 
-lemma speed_integral_gr_0: fixes r::real and s::real
+lemma speed_integral_gr_0:
+  fixes r::real and s::real
   shows "a\<le>r \<Longrightarrow> r<s \<Longrightarrow> s\<le>b \<Longrightarrow> integral {r..s} (speed f) > 0"
 proof-
   obtain f' where f'_def: "\<forall>t\<in>{a..b}. (f has_vector_derivative (f' t)) (at t) \<and> f' t \<noteq> 0 \<and> isCont f' t"
@@ -166,7 +168,8 @@ lemma speed_integrable:
     using not_integrable_integral speed_integral_gr_0
     by (metis integrable_on_refl interval_cbox less_eq_real_def order_less_irrefl)
 
-lemma dist_is_strict_mono_on: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
+lemma dist_is_strict_mono_on:
+  assumes "d = (\<lambda>t. integral {a..t} (speed f))"
   shows "strict_mono_on {a..b} d"
 proof -
   have 0: "integral ({r<..s}) g = integral {r..s} g" for r s ::real and g::"real \<Rightarrow> 'a::euclidean_space"
@@ -181,11 +184,13 @@ proof -
     by(auto)
 qed
 
-lemma dist_inj_on: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
+lemma dist_inj_on:
+  assumes "d = (\<lambda>t. integral {a..t} (speed f))"
   shows "inj_on d {a..b}"
   by (simp add: dist_is_strict_mono_on strict_mono_on_imp_inj_on assms)
 
-lemma dist_deriv: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
+lemma dist_deriv:
+  assumes "d = (\<lambda>t. integral {a..t} (speed f))"
   shows "\<forall>t \<in>{a..b}. (d has_vector_derivative (speed f) t) (at t within {a..b})"
 proof-
   have speed_integrable_on_a_b: "(speed f) integrable_on {a..b}" using speed_integrable
@@ -197,12 +202,13 @@ proof-
     using spd_f_cont_on by blast
 qed
 
-lemma dist_cont_on: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
+lemma dist_cont_on:
+  assumes "d = (\<lambda>t. integral {a..t} (speed f))"
   shows "continuous_on {a..b} d"
-  using dist_deriv
-  by (meson assms continuous_on_eq_continuous_within has_vector_derivative_continuous)
+  using dist_deriv by (meson assms continuous_on_eq_continuous_within has_vector_derivative_continuous)
 
-lemma dist_open_interval_img: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
+lemma dist_open_interval_img:
+  assumes "d = (\<lambda>t. integral {a..t} (speed f))"
   shows "d ` {a<..<b} = {(d a)<..<(d b)}"
 proof -
   have "x \<in> {a<..<b} \<Longrightarrow> d a < d x \<and> d x < d b" for x
@@ -222,16 +228,19 @@ proof -
     by auto
 qed
 
-lemma dist_closed_interval_img: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
+lemma dist_closed_interval_img:
+  assumes "d = (\<lambda>t. integral {a..t} (speed f))"
   shows "d ` {a..b} = {(d a)..(d b)}"
   apply(subst sym[OF interval_un_ends])
   by (auto simp add: a_le_b assms interval_un_ends speed_integrable dist_open_interval_img integral_nonneg nle_le speed_ge_0)
 
-lemma dist_bij_betw: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
+lemma dist_bij_betw:
+  assumes "d = (\<lambda>t. integral {a..t} (speed f))"
   shows "bij_betw d {a..b} {(d a)..(d b)}"
   by (simp add: assms bij_betw_def dist_inj_on dist_closed_interval_img)
 
-lemma f_of_inv_d_has_unit_speed: assumes "d = (\<lambda>t. integral {a..t} (speed f))"
+lemma f_of_inv_d_has_unit_speed:
+  assumes "d = (\<lambda>t. integral {a..t} (speed f))"
   shows "\<forall>t\<in>d ` {a<..<b}. speed (f \<circ> (the_inv_into {a..b} d)) t = 1"
 proof-
   let ?s = "the_inv_into {a..b} d"

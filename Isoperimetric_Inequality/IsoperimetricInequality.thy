@@ -2,268 +2,134 @@ theory IsoperimetricInequality
   imports Intervals "$AFP/Green/Green"
 begin
 
-lemma measurable_cross_section_typeI:(*PROOF CAN BE SHORTENED*)
+lemma measurable_cross_section_typeI:
   assumes "typeI_twoCube C"
   shows "(\<lambda>x. measure lebesgue {y. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
 proof -
-  obtain a b g1 g2 where C_def: "a < b \<and> (\<forall>x \<in> {a..b}. g2 x \<le> g1 x) \<and>
-                       C = (\<lambda>(x,y). ((1-x)*a + x*b,
-                                        (1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)))) \<and>
-                       g1 piecewise_C1_differentiable_on {a..b} \<and>
-                       g2 piecewise_C1_differentiable_on {a..b}"
-    using assms typeI_twoCube_def by auto
-  have minus_cont:"continuous_on {a..b} (g1 - g2)"
-    by (auto simp add: C_def continuous_on_diff piecewise_C1_differentiable_on_imp_continuous_on)
-  have "a<b" using C_def by simp
-  have g1_to_g2:"{y. g2 x \<le> y \<and> y\<le> g1 x} = {g2 x..g1 x}" for x
-    by(auto)
-  have "(\<exists>z\<in>{0..1}. x = a + (b-a)*z) = (x \<in> {a..b})" for x
-    by (metis (mono_tags, lifting) C_def add_scale_img image_iff)
-  hence 2: "(\<exists>z\<in>{0..1}. x = (1-z)*a + z*b) = (x \<in> {a..b})" for x
-    by (simp add: algebra_simps)
-  have "(x,y) \<in> cubeImage C \<Longrightarrow> \<exists>z\<in>{0..1}. x = (1-z)*a + z*b" for x y
-    using box_real(2) image_def cubeImage_def C_def by force
-  hence cubeImage_x:"(x,y) \<in> cubeImage C \<Longrightarrow> x \<in> {a..b}" for x y
-    using "2" by blast
-  hence "x \<notin> {a..b} \<Longrightarrow>{y. (x, y) \<in> cubeImage C} = {}" for x
-    by blast
-  hence x_notin_a_b:"x \<notin> {a..b} \<Longrightarrow> measure lebesgue {y. (x, y) \<in> cubeImage C} = 0" for x
+  obtain a b g1 g2 where C_params: "a < b" "(\<forall>x \<in> {a..b}. g2 x \<le> g1 x)"
+                       "C = (\<lambda>(x,y). (a + (b-a)*x,
+                                 g2 (a + (b-a)*x) + (g1 (a + (b-a)*x) - g2 (a + (b-a)*x))*y))"
+                       "g1 piecewise_C1_differentiable_on {a..b}"
+                       "g2 piecewise_C1_differentiable_on {a..b}"
+    using assms typeI_twoCube_def by (auto simp add: algebra_simps)
+  have 1:"(\<exists>w\<in>{0..1}. x = a + (b-a)*w) = (x \<in> {a..b})" for x
+    using C_params(1) add_scale_img by (metis (mono_tags, lifting) image_iff)
+  have "x\<in>{a..b} \<Longrightarrow> (\<lambda>y. g2 x + (g1 x - g2 x)*y) ` {0..1} = {g2 x..g1 x}" for x::real
+    by(auto simp add: C_params(2) add_scale_img')
+  hence 2: "x\<in>{a..b} \<Longrightarrow> (\<exists>z\<in>{0..1}.  y = g2 x + (g1 x - g2 x)*z) = (y \<in> {g2 x..g1 x})" for x y
+    by (metis (mono_tags, lifting) image_iff)
+  have "cubeImage C = {(x,y). \<exists>z\<in>{0..1}. \<exists>w\<in>{0..1}. x = a + (b-a)*w \<and> y = g2 x + (g1 x - g2 x)*z}"
+    unfolding cubeImage_def image_def using C_params(3) by(auto split: prod.splits)
+  hence "cubeImage C = {(x,y). \<exists>z\<in>{0..1}. x\<in>{a..b} \<and> y = g2 x + (g1 x - g2 x)*z}"
+    using 1 by auto
+  hence cubeImage_C: "cubeImage C = {(x,y). x \<in> {a..b} \<and> y \<in> {g2 x..g1 x}}"
+    using 2 by auto
+  hence "x\<in>{a..b} \<Longrightarrow> {y. (x,y) \<in> cubeImage C} = {g2 x..g1 x}" for x
     by auto
-  have 3: "(x,y)\<in> cubeImage C = (\<exists>(w,z)\<in>unit_cube. (x,y) = ((1-w)*a + w*b,
-                                        (1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b))))" for x y
-    using C_def cubeImage_def by auto
-  have "x\<in>{a..b} \<Longrightarrow> ((x,y)\<in> cubeImage C) = (g2 x \<le> y \<and> y \<le> g1 x)" for x y
-  proof
-    assume "(x,y)\<in> cubeImage C"
-    then obtain w z where wz_def: "(w,z)\<in>unit_cube \<and> (x,y) = ((1-w)*a + w*b,
-                                        (1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)))"
-      using 3 by auto
-    hence "z\<in>{0..1}" by auto
-    have 4:"0 \<le> (g1 x - g2 x) * z"
-      by (meson C_def \<open>(x, y) \<in> cubeImage C\<close> \<open>z \<in> {0..1}\<close> atLeastAtMost_iff cubeImage_x diff_ge_0_iff_ge mult_nonneg_nonneg)
-    hence "g2 x + (g1 x - g2 x) * z \<le> g2 x + (g1 x - g2 x)"
-      by (metis C_def \<open>(x, y) \<in> cubeImage C\<close> \<open>z \<in> {0..1}\<close> add.commute atLeastAtMost_iff cubeImage_x diff_add_cancel diff_ge_0_iff_ge le_diff_eq mult_left_le)
-    hence 5: "g2 x + (g1 x - g2 x) * z \<le> g1 x"
-      by simp
-    have 6: "x\<in>{a..b}"
-      using \<open>(x, y) \<in> cubeImage C\<close> cubeImage_x by blast
-    have "x = (1-w)*a + w*b" using wz_def by simp
-    hence "(x,y) = (x, (1-z)*g2 x + z * g1 x)" using wz_def by auto
-    hence "y = g2 x + (g1 x - g2 x) * z" by (auto simp add: algebra_simps)
-    thus "(x,y)\<in> cubeImage C \<Longrightarrow> g2 x \<le> y \<and> y \<le> g1 x"
-      using \<open>z \<in> {0..1}\<close> by(auto simp add: cubeImage_x 4 5 6 C_def)
-  next
-    assume "(g2 x \<le> y \<and> y \<le> g1 x)"
-    hence y_in:"y \<in> {g2 x.. g1 x}" by auto
-    assume asm2: "x\<in>{a..b}"
-    hence "\<exists>w\<in>{0..1}. x = (1-w)*a + w*b"
-      using "2" by blast
-    then obtain w where w_def:"w\<in>{0..1} \<and> x = (1-w)*a + w*b" by auto
-    have "g2 x \<le> g1 x" using C_def asm2 by auto
-    hence "\<exists>z\<in>{0..1}. y = g2 x + (g1 x - g2 x)*z"
-      using add_scale_img'[of "g2 x" "g1 x"] y_in by auto
-    hence "\<exists>z\<in>{0..1}. y = (1 - z) * (g2 x) + z * (g1 x)"
-      by (auto simp add: algebra_simps)
-    then obtain z where z_def:"z\<in>{0..1} \<and> y = (1 - z) * (g2 x) + z * (g1 x)" by auto
-    hence "(x,y) = ((1-w)*a + w*b, (1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)))"
-      using w_def by auto
-    hence "\<exists>(w,z)\<in>unit_cube. (x,y) = ((1-w)*a + w*b, (1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)))"
-      using w_def z_def by auto
-    thus "(x,y) \<in> cubeImage C" using cubeImage_def C_def by auto
-  qed
-  hence "x\<in>{a..b} \<Longrightarrow> {y. (x,y)\<in> cubeImage C} = {y. g2 x \<le> y \<and> y \<le> g1 x}" for x
-    by auto
-  hence "x\<in>{a..b} \<Longrightarrow> measure lebesgue {y. (x, y) \<in> cubeImage C} = measure lebesgue {y. g2 x \<le> y \<and> y\<le> g1 x}" for x
-    by(auto)
   hence measure_s\<^sub>x: "x\<in>{a..b} \<Longrightarrow> measure lebesgue {y. (x, y) \<in> cubeImage C} = g1 x - g2 x" for x
-    by(simp add: g1_to_g2 C_def)
-  have measure_indicat:"(\<lambda>x. measure lebesgue {y. (x, y) \<in> cubeImage C}) x = (\<lambda>x. indicat_real {a..b} x *\<^sub>R (g1 x - g2 x)) x" for x
-    by (metis indicator_simps(1) indicator_simps(2) measure_s\<^sub>x mult_cancel_right1 mult_eq_0_iff real_scaleR_def x_notin_a_b)
+    by(simp add: C_params(2))
+  moreover have "x\<notin>{a..b} \<Longrightarrow> measure lebesgue {y. (x, y) \<in> cubeImage C} = 0" for x
+    using cubeImage_C by force
+  ultimately have measure_indicat:"(\<lambda>x. measure lebesgue {y. (x, y) \<in> cubeImage C}) x =
+                          (\<lambda>x. indicat_real {a..b} x *\<^sub>R (g1 x - g2 x)) x" for x
+    by (metis indicator_eq_0_iff indicator_eq_1_iff scaleR_one scaleR_zero_left)
   thus "(\<lambda>x. measure lebesgue {y. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
     apply(subst measure_indicat)
     apply(rule borel_measurable_continuous_on_indicator)
-    using minus_cont by(auto)
+    by (auto simp add: minus_cont C_params(4,5) piecewise_C1_differentiable_on_imp_continuous_on)
 qed
 
-lemma measurable_cross_section_typeII:(*PROOF CAN BE SHORTENED*)
+lemma measurable_cross_section_typeII:
   assumes "typeII_twoCube C"
   shows "(\<lambda>y. measure lebesgue {x. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
 proof -
-  obtain a b g1 g2 where C_def: "a < b \<and> (\<forall>x \<in> {a..b}. g2 x \<le> g1 x) \<and>
-                       C = (\<lambda>(y, x). ((1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)),
-                                        (1-x)*a + x*b)) \<and>
-                       g1 piecewise_C1_differentiable_on {a .. b} \<and>
-                       g2 piecewise_C1_differentiable_on {a .. b}"
-    using assms typeII_twoCube_def by auto
-  have minus_cont:"continuous_on {a..b} (g1 - g2)"
-    by (auto simp add: C_def continuous_on_diff piecewise_C1_differentiable_on_imp_continuous_on)
-  have "a<b" using C_def by simp
-  have g1_to_g2:"{y. g2 x \<le> y \<and> y\<le> g1 x} = {g2 x..g1 x}" for x
-    by(auto)
-  have "(\<exists>z\<in>{0..1}. x = a + (b-a)*z) = (x \<in> {a..b})" for x
-    by (metis (mono_tags, lifting) C_def add_scale_img image_iff)
-  hence 2: "(\<exists>z\<in>{0..1}. x = (1-z)*a + z*b) = (x \<in> {a..b})" for x
-    by (simp add: algebra_simps)
-  have "(x,y) \<in> cubeImage C \<Longrightarrow> \<exists>z\<in>{0..1}. y = (1-z)*a + z*b" for x y
-    using box_real(2) image_def cubeImage_def C_def by force
-  hence cubeImage_x:"(x,y) \<in> cubeImage C \<Longrightarrow> y \<in> {a..b}" for x y
-    using "2" by blast
-  hence "y \<notin> {a..b} \<Longrightarrow>{x. (x, y) \<in> cubeImage C} = {}" for y
-    by blast
-  hence x_notin_a_b:"y \<notin> {a..b} \<Longrightarrow> measure lebesgue {x. (x, y) \<in> cubeImage C} = 0" for y
+  obtain a b g1 g2 where C_params: "a < b" "(\<forall>x \<in> {a..b}. g2 x \<le> g1 x)"
+                       "C = (\<lambda>(y, x). (g2 (a + (b-a)*x) + (g1 (a + (b-a)*x) - g2 (a + (b-a)*x))*y,
+                                        a + (b-a)*x))"
+                       "g1 piecewise_C1_differentiable_on {a .. b}"
+                       "g2 piecewise_C1_differentiable_on {a .. b}"
+    using assms typeII_twoCube_def by (auto simp add: algebra_simps)
+  have 1:"(\<exists>w\<in>{0..1}. y = a + (b-a)*w) = (y \<in> {a..b})" for y
+    using C_params(1) add_scale_img by (metis (mono_tags, lifting) image_iff)
+  have "y\<in>{a..b} \<Longrightarrow> (\<lambda>x. g2 y + (g1 y - g2 y)*x) ` {0..1} = {g2 y..g1 y}" for y::real
+    by(auto simp add: C_params(2) add_scale_img')
+  hence 2: "y\<in>{a..b} \<Longrightarrow> (\<exists>z\<in>{0..1}.  x = g2 y + (g1 y - g2 y)*z) = (x \<in> {g2 y..g1 y})" for x y
+    by (metis (mono_tags, lifting) image_iff)
+  have "cubeImage C = {(x,y). \<exists>w\<in>{0..1}. \<exists>z\<in>{0..1}. y = a + (b-a)*w \<and> x = g2 y + (g1 y - g2 y)*z}"
+    unfolding cubeImage_def image_def using C_params(3) by(auto split: prod.splits)
+  hence "cubeImage C = {(x,y). \<exists>z\<in>{0..1}. y\<in>{a..b} \<and> x = g2 y + (g1 y - g2 y)*z}"
+    using 1 by auto
+  hence cubeImage_C: "cubeImage C = {(x,y). y \<in> {a..b} \<and> x \<in> {g2 y..g1 y}}"
+    using 2 by auto
+  hence "y\<in>{a..b} \<Longrightarrow> {x. (x,y) \<in> cubeImage C} = {g2 y..g1 y}" for y
     by auto
-  have 3: "(x,y)\<in> cubeImage C = (\<exists>(w,z)\<in>unit_cube. (x,y) = ((1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)),(1-w)*a + w*b))" for x y
-    using C_def cubeImage_def by auto
-  have "y\<in>{a..b} \<Longrightarrow> ((x,y)\<in> cubeImage C) = (g2 y \<le> x \<and> x \<le> g1 y)" for x y
-  proof
-    assume "(x,y)\<in> cubeImage C"
-    then obtain w z where wz_def: "(w,z)\<in>unit_cube \<and> (x,y) = ((1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)),(1-w)*a + w*b)"
-      using 3 by auto
-    hence "z\<in>{0..1}" by auto
-    have 4:"0 \<le> (g1 y - g2 y) * z"
-      by (meson C_def \<open>(x, y) \<in> cubeImage C\<close> \<open>z \<in> {0..1}\<close> atLeastAtMost_iff cubeImage_x diff_ge_0_iff_ge mult_nonneg_nonneg)
-    hence "g2 y + (g1 y - g2 y) * z \<le> g2 y + (g1 y - g2 y)"
-      by (metis C_def \<open>(x, y) \<in> cubeImage C\<close> \<open>z \<in> {0..1}\<close> add.commute atLeastAtMost_iff cubeImage_x diff_add_cancel diff_ge_0_iff_ge le_diff_eq mult_left_le)
-    hence 5: "g2 y + (g1 y - g2 y) * z \<le> g1 y"
-      by simp
-    have 6: "y\<in>{a..b}"
-      using \<open>(x, y) \<in> cubeImage C\<close> cubeImage_x by blast
-    have "y = (1-w)*a + w*b" using wz_def by simp
-    hence "(x,y) = ((1-z)*g2 y + z * g1 y,y)" using wz_def by auto
-    hence "x = g2 y + (g1 y - g2 y) * z" by (auto simp add: algebra_simps)
-    thus "(x,y)\<in> cubeImage C \<Longrightarrow> g2 y \<le> x \<and> x \<le> g1 y"
-      using \<open>z \<in> {0..1}\<close> by(auto simp add: cubeImage_x 4 5 6 C_def)
-  next
-    assume "(g2 y \<le> x \<and> x \<le> g1 y)"
-    hence y_in:"x \<in> {g2 y.. g1 y}" by auto
-    assume asm2: "y\<in>{a..b}"
-    hence "\<exists>w\<in>{0..1}. y = (1-w)*a + w*b"
-      using "2" by blast
-    then obtain w where w_def:"w\<in>{0..1} \<and> y = (1-w)*a + w*b" by auto
-    have "g2 y \<le> g1 y" using C_def asm2 by auto
-    hence "\<exists>z\<in>{0..1}. x = g2 y + (g1 y - g2 y)*z"
-      using add_scale_img'[of "g2 y" "g1 y"] y_in by auto
-    hence "\<exists>z\<in>{0..1}. x = (1 - z) * (g2 y) + z * (g1 y)"
-      by (auto simp add: algebra_simps)
-    then obtain z where z_def:"z\<in>{0..1} \<and> x = (1 - z) * (g2 y) + z * (g1 y)" by auto
-    hence "(x,y) = ((1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)),(1-w)*a + w*b)"
-      using w_def by auto
-    hence "\<exists>(w,z)\<in>unit_cube. (x,y) = ((1 - z) * (g2 ((1-w)*a + w*b)) + z * (g1 ((1-w)*a + w*b)),(1-w)*a + w*b)"
-      using w_def z_def by auto
-    thus "(x,y) \<in> cubeImage C" using cubeImage_def C_def by auto
-  qed
-  hence "y\<in>{a..b} \<Longrightarrow> {x. (x,y)\<in> cubeImage C} = {x. g2 y \<le> x \<and> x \<le> g1 y}" for y
-    by auto
-  hence "y\<in>{a..b} \<Longrightarrow> measure lebesgue {x. (x, y) \<in> cubeImage C} = measure lebesgue {x. g2 y \<le> x \<and> x \<le> g1 y}" for y
-    by(auto)
   hence measure_s\<^sub>x: "y\<in>{a..b} \<Longrightarrow> measure lebesgue {x. (x, y) \<in> cubeImage C} = g1 y - g2 y" for y
-    by(simp add: g1_to_g2 C_def)
-  have measure_indicat:"(\<lambda>y. measure lebesgue {x. (x, y) \<in> cubeImage C}) y = (\<lambda>x. indicat_real {a..b} y *\<^sub>R (g1 y - g2 y)) y" for y
-    by (metis indicator_simps(1) indicator_simps(2) measure_s\<^sub>x mult_cancel_right1 mult_eq_0_iff real_scaleR_def x_notin_a_b)
+    by(simp add: C_params(2))
+  moreover have "y\<notin>{a..b} \<Longrightarrow> measure lebesgue {x. (x, y) \<in> cubeImage C} = 0" for y
+    using cubeImage_C by force
+  ultimately have measure_indicat:"(\<lambda>y. measure lebesgue {x. (x, y) \<in> cubeImage C}) y =
+                          (\<lambda>y. indicat_real {a..b} y *\<^sub>R (g1 y - g2 y)) y" for y
+    by (metis indicator_eq_0_iff indicator_eq_1_iff scaleR_one scaleR_zero_left)
   thus "(\<lambda>y. measure lebesgue {x. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
     apply(subst measure_indicat)
     apply(rule borel_measurable_continuous_on_indicator)
-    using minus_cont by(auto)
+    by (auto simp add: minus_cont C_params(4,5) piecewise_C1_differentiable_on_imp_continuous_on)
 qed
 
 lemma typeI_II_cubes_cont_on:
   assumes "typeI_twoCube C \<or> typeII_twoCube C"
   shows "continuous_on unit_cube C"
-proof-
-  have 0: "continuous_on UNIV (\<lambda>x. fst x)"
-    by (simp add: continuous_on_fst)
-  have 1: "continuous_on UNIV (\<lambda>x. (1-x)*a + x*b)" for a b::real
-    by (simp add: continuous_on_add continuous_on_mult_right continuous_on_op_minus)
-  hence scale_cont: "continuous_on UNIV (\<lambda>x. (1-fst x)*a + (fst x)*b)" for a b::real
-    by (simp add: "0" continuous_on_add continuous_on_diff continuous_on_mult_right)
+proof -
+  have scale_cont: "continuous_on UNIV (\<lambda>x. a + (b-a)* fst x)" for a b::real
+    by (simp add: continuous_on_fst continuous_on_add continuous_on_mult_left)
   have "fst ` unit_cube = {0..1}"
     by (metis cbox_Pair_eq fst_image_times interval_cbox)
-  have "(\<lambda>x. a + (b - a) * fst x) = (\<lambda>x. (1 - fst x) * a + fst x * b)" for a b ::real
-    by(auto simp add: algebra_simps)
-  hence 3: "a<b \<Longrightarrow> (\<lambda>x. (1 - fst x) * a + fst x * b) ` unit_cube = {a..b}" for a b::real
-    apply-
-    apply(rule subst[of "(\<lambda>x. a + (b - a) * fst x)" "(\<lambda>x. (1 - fst x) * a + fst x * b)"])
-     apply(assumption)
-    apply(subst sym[OF add_scale_img])
-    apply(simp)
-    by (metis \<open>fst ` unit_cube = {0..1}\<close> image_image)
-  have snd_cont:"continuous_on unit_cube (\<lambda>x. snd x)"
-    using continuous_on_snd continuous_on_id by blast
-  hence snd_cont':"continuous_on unit_cube (\<lambda>x. 1 - snd x)"
-    using continuous_on_const continuous_on_diff by blast
-  have 4: "a<b \<Longrightarrow> continuous_on {a..b} f \<Longrightarrow> continuous_on unit_cube (\<lambda>x. f ((1- fst x)*a + (fst x)*b))" for f and a b ::real
+  hence scale_img: "a<b \<Longrightarrow> (\<lambda>x. a + (b-a)* fst x) ` unit_cube = {a..b}" for a b::real
+    by (metis add_scale_img image_image)
+  have cont_on_unit_cube: "a<b \<Longrightarrow> continuous_on {a..b} f \<Longrightarrow>
+            continuous_on unit_cube (\<lambda>x. f (a + (b-a)* fst x))" for f::"real \<Rightarrow> real" and a b ::real
     apply(subst sym[OF o_def[of f]])
     apply(rule continuous_on_compose)
      apply(rule continuous_on_subset[of UNIV])
-    using scale_cont apply blast
-     apply simp
-    apply(rule subst[of "{a..b}"])
-    by(auto simp add: 3)
-  show ?thesis
-  proof cases
-    assume case1:"typeI_twoCube C"
-    obtain a b g1 g2 where C_def: "a < b \<and> (\<forall>x \<in> {a..b}. g2 x \<le> g1 x) \<and>
-                         C = (\<lambda>(x,y). ((1-x)*a + x*b,
-                                          (1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)))) \<and>
-                         g1 piecewise_C1_differentiable_on {a..b} \<and>
-                         g2 piecewise_C1_differentiable_on {a..b}"
-      using case1 typeI_twoCube_def by auto
-    have g_cont: "continuous_on {a..b} g1" "continuous_on {a..b} g2"
-      using C_def piecewise_C1_differentiable_on_imp_continuous_on by blast +
-    have "continuous_on unit_cube (\<lambda>x. (1 - snd x) * (g2 ((1-fst x)*a + (fst x)*b)) + snd x * (g1 ((1-fst x)*a + (fst x)*b)))"
-      apply-
-      apply(rule continuous_on_add)
-       apply(rule continuous_on_mult')
-        apply(rule snd_cont')
-      using g_cont 4 C_def apply blast
-      apply(rule continuous_on_mult')
-       apply(rule snd_cont)
-      using g_cont 4 C_def by blast
-    hence "continuous_on unit_cube (\<lambda>x. ((1 - fst x) * a + fst x * b,(1 - snd x) * (g2 ((1-fst x)*a + (fst x)*b)) + snd x * (g1 ((1-fst x)*a + (fst x)*b))))"
-      apply -
-      apply(rule continuous_on_Pair)
-      using scale_cont continuous_on_subset apply blast 
-      by(assumption)
+    by(auto simp add: scale_img scale_cont continuous_on_subset)
+  have 0:"a<b \<Longrightarrow> continuous_on {a..b} f1 \<Longrightarrow> continuous_on {a..b} f2 \<Longrightarrow> continuous_on unit_cube
+    (\<lambda>x. f2(a+(b-a)*fst x)+(f1(a+(b-a)*fst x)-f2(a+(b-a)*fst x))* snd x)" for a b f1 f2
+    using cont_on_unit_cube[of a b f1] cont_on_unit_cube[of a b f2]
+      by (simp add: continuous_on_add continuous_on_diff continuous_on_mult continuous_on_snd)
+  from assms show ?thesis
+  proof
+    assume "typeI_twoCube C"
+    then obtain a b g1 g2 where C_params: "a < b" "(\<forall>x \<in> {a..b}. g2 x \<le> g1 x)"
+         "C = (\<lambda>(x,y). (a + (b-a)*x, g2 (a + (b-a)*x) + (g1 (a + (b-a)*x) - g2 (a + (b-a)*x))*y))"
+         "g1 piecewise_C1_differentiable_on {a..b}"
+         "g2 piecewise_C1_differentiable_on {a..b}"
+      using typeI_twoCube_def by (auto simp add: algebra_simps)
+    have "continuous_on unit_cube
+     (\<lambda>x. g2(a+(b-a)*fst x)+(g1(a+(b-a)*fst x)-g2(a+(b-a)* fst x))* snd x)"
+      using 0[of a b g1 g2] C_params piecewise_C1_differentiable_on_imp_continuous_on by auto
+    hence "continuous_on unit_cube
+     (\<lambda>x. (a+(b-a)* fst x, g2(a+(b-a)* fst x) + (g1(a+(b-a)* fst x)-g2(a+(b-a)* fst x))* snd x))"
+      apply(intro continuous_on_Pair) using continuous_on_subset scale_cont by blast+
     thus "continuous_on unit_cube C"
-      using C_def by (metis (no_types, lifting) case_prod_beta' continuous_on_cong)
+      using C_params(3) by (metis (no_types, lifting) case_prod_beta' continuous_on_cong)
   next
-    assume "\<not> typeI_twoCube C"
-    hence case2: "typeII_twoCube C" using assms by auto
-    then obtain a b g1 g2 where C_def: "a < b \<and> (\<forall>x \<in> {a..b}. g2 x \<le> g1 x) \<and>
-                       C = (\<lambda>(y, x). ((1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)),
-                                        (1-x)*a + x*b)) \<and>
-                       g1 piecewise_C1_differentiable_on {a .. b} \<and>
-                       g2 piecewise_C1_differentiable_on {a .. b}"
-      using assms typeII_twoCube_def by auto
-    have g_cont: "continuous_on {a..b} g1" "continuous_on {a..b} g2"
-      using C_def piecewise_C1_differentiable_on_imp_continuous_on by blast +
-    have unit_prod:"unit_cube  = {0..1}\<times>{0..1}"
-      by auto
-    have "continuous_on unit_cube (\<lambda>x. (1 - snd x) * (g2 ((1-fst x)*a + (fst x)*b)) + snd x * (g1 ((1-fst x)*a + (fst x)*b)))"
-      apply-
-      apply(rule continuous_on_add)
-       apply(rule continuous_on_mult')
-        apply(rule snd_cont')
-      using g_cont 4 C_def apply blast
-      apply(rule continuous_on_mult')
-       apply(rule snd_cont)
-      using g_cont 4 C_def by blast
-    hence "continuous_on unit_cube (\<lambda>x. ((1 - snd x) * (g2 ((1-fst x)*a + (fst x)*b)) + snd x * (g1 ((1-fst x)*a + (fst x)*b)),
-                                        (1-fst x)*a + (fst x)*b))"
-      apply -
-      apply(rule continuous_on_Pair)
-       apply(assumption)
-      using scale_cont continuous_on_subset by blast
-    hence "continuous_on unit_cube (\<lambda>(x,y). ((1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)),(1 - x) * a + x * b))"
+    assume "typeII_twoCube C"
+    then obtain a b g1 g2 where C_params: "a < b" "(\<forall>x \<in> {a..b}. g2 x \<le> g1 x)"
+         "C = (\<lambda>(y,x). (g2 (a + (b-a)*x) + (g1 (a + (b-a)*x) - g2 (a + (b-a)*x))*y,a + (b-a)*x))"
+         "g1 piecewise_C1_differentiable_on {a..b}"
+         "g2 piecewise_C1_differentiable_on {a..b}"
+      using typeII_twoCube_def by (auto simp add: algebra_simps)
+    have "continuous_on unit_cube
+     (\<lambda>x. g2 (a + (b - a) * fst x) + (g1 (a + (b - a) * fst x) - g2 (a + (b - a) * fst x)) * snd x)"
+      using 0[of a b g1 g2] C_params piecewise_C1_differentiable_on_imp_continuous_on by auto
+    hence "continuous_on unit_cube
+     (\<lambda>x. (g2(a+(b-a)* fst x) + (g1(a+(b-a)* fst x)-g2(a+(b-a)* fst x))* snd x,a+(b-a)* fst x))"
+      apply(intro continuous_on_Pair) using continuous_on_subset scale_cont by blast+
+    hence "continuous_on unit_cube 
+     (\<lambda>(x,y). (g2(a+(b-a)* x) + (g1(a+(b-a)* x)-g2(a+(b-a)* x))* y,a+(b-a)* x))"
       by (metis (no_types, lifting) case_prod_beta' continuous_on_cong)
-    hence "continuous_on unit_cube (\<lambda>(y,x). ((1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)),(1 - x) * a + x * b))"
-      apply -
-      apply (subst unit_prod)
-      apply(rule continuous_on_swap_args)
-      apply(subst (asm) unit_prod)
-      by(assumption)
     thus"continuous_on unit_cube C"
-      by(simp add: C_def)
+      using swap_continuous C_params(3) by blast
   qed
 qed
 
@@ -295,24 +161,99 @@ proof -
     by (metis (mono_tags, opaque_lifting) assms image_iff)
 qed
 
-lemma measurable_cross_section_union:
-  fixes s t::"(real\<times>real) set"
-  assumes "(\<lambda>x. measure lebesgue {y. (x, y) \<in> s}) \<in> borel_measurable borel" "(\<lambda>x. measure lebesgue {y. (x, y) \<in> t}) \<in> borel_measurable borel"
-"negligible (t\<inter>s)"
-shows "(\<lambda>x. measure lebesgue {y. (x, y) \<in> s\<union>t}) \<in> borel_measurable borel"
-proof-
-(*we have measure s\<^sub>x + measure t\<^sub>x - measure s\<^sub>x\<inter>t\<^sub>x = measure s\<^sub>x\<union>t\<^sub>x, so if we can show measure s\<^sub>x\<inter>t\<^sub>x function is borel_measurable we get the result
-  this is a property s and t being bounded by continuous functions*)
-  have "{y. (x, y) \<in> s\<union>t} = {y. (x, y) \<in> s} \<union> {y. (x, y) \<in> t}" for x
-    by(auto)
-  moreover have "{y. (x, y) \<in> s\<inter>t} = {y. (x, y) \<in> s} \<inter> {y. (x, y) \<in> t}" for x
+lemma measure_func_of_intersection_AE_zero:
+  assumes "typeI_twoCube C" "typeI_twoCube D" "negligible (cubeImage C \<inter> cubeImage D)"
+  shows "AE x in lebesgue. (measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) = 0"
+(*suppose C and D are defined by (a b g1 g2) and (c d h1 h2) resp.
+Case1: if [a,b] and [c,d] are disjoint it follows trivially
+Case2: two of the endpoints are equal, then there is only one x coordinate in C\<inter>D so follows trivially
+Case3: [a,b] and [c,d] intersect on some interval,
+        we must have g1 \<le> h2  or g2 \<ge> h1 on the range
+         otherwise due to continuity of h1 h2 g1 g2 we would have a non negligible intersection
+          from this we get only the endpoints can have intersection which isn't just 1 point*)
+proof -
+  obtain a b g1 g2 where C_params: "a < b \<and> (\<forall>x \<in> {a..b}. g2 x \<le> g1 x) \<and>
+                       C = (\<lambda>(x,y). ((1-x)*a + x*b,
+                                        (1 - y) * (g2 ((1-x)*a + x*b)) + y * (g1 ((1-x)*a + x*b)))) \<and>
+                       g1 piecewise_C1_differentiable_on {a..b} \<and>
+                       g2 piecewise_C1_differentiable_on {a..b}"
+    using typeI_twoCube_def assms by auto
+  obtain c d h1 h2 where D_params: "c < d \<and> (\<forall>x \<in> {c..d}. h2 x \<le> h1 x) \<and>
+                       D = (\<lambda>(x,y). ((1-x)*c + x*d,
+                                        (1 - y) * (h2 ((1-x)*c + x*d)) + y * (h1 ((1-x)*c + x*d)))) \<and>
+                       h1 piecewise_C1_differentiable_on {c..d} \<and>
+                       h2 piecewise_C1_differentiable_on {c..d}"
+    using typeI_twoCube_def assms by auto
+  have "a<b" "c<d"
+    using C_params D_params by auto
+  have "continuous_on {a..b} g1" "continuous_on {a..b} g2" "continuous_on {c..d} h1" "continuous_on {c..d} h2"
+    using C_params D_params piecewise_C1_differentiable_on_imp_continuous_on by auto
+  have C_point: "p\<in>cubeImage C \<Longrightarrow> fst p \<in> {a..b}" for p
+    sorry
+  have D_point: "q\<in>cubeImage D \<Longrightarrow> fst q \<in> {c..d}" for q
+    sorry
+  have abcd_cases: "(a > d \<or> b < c)\<or>(a = d \<or> b = c)\<or>(a < d \<and> b > c)"
     by auto
-  ultimately have "measure lebesgue {y. (x, y) \<in> s\<union>t} = measure lebesgue {y. (x, y) \<in> s} + measure lebesgue {y. (x, y) \<in> t} - measure lebesgue {y. (x, y) \<in> s\<inter>t}" for x
-    apply(simp)
-    apply(rule measure_Un3)
-  sorry
-  find_theorems "_\<union>_" "measure" name:"Un3"
+  then consider "(a > d \<or> b < c)"|"(a = d \<or> b = c)"|"(a < d \<and> b > c)"
+    by auto
+  note abcd_cases = this
+  show ?thesis
+  proof (rule abcd_cases, goal_cases)
+    case 1
+    then show ?case sorry
+  next
+    case 2
+    then show ?case sorry
+  next
+    case 3
+    then show ?case sorry
+  qed
+    assume case1: "a > d \<or> b < c"
+    then have "{a..b} \<inter> {c..d} = {}"
+      by force
+    hence "cubeImage C \<inter> cubeImage D = {}"
+      using C_point D_point by blast
+    thus ?thesis
+      by simp
+  next
+    assume notcase1:"\<not> (a > d \<or> b < c)"
+    show ?thesis
+    proof cases
+      assume case2: "a = d \<or> b = c"
+      have "a = d \<Longrightarrow> {a..b} \<inter> {c..d} = {a}"
+        using \<open>a<b\<close> \<open>c<d\<close> by auto
+      moreover have "b = c \<Longrightarrow> {a..b} \<inter> {c..d} = {b}"
+        using \<open>a<b\<close> \<open>c<d\<close> by auto
+      ultimately have "p\<in> cubeImage C \<inter> cubeImage D \<Longrightarrow> fst p = a \<or> fst p = b" for p
+        using C_point D_point
+        by (metis IntD1 IntD2 atLeastAtMost_iff case2 nle_le)
+      hence "(measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) \<noteq> 0 \<Longrightarrow> x \<in> {a,b}" for x
+        by (metis (mono_tags, lifting) empty_Collect_eq fst_conv insertCI negligible_empty negligible_imp_measure0)
+      moreover have "negligible {a,b} \<and> {x. \<not> (measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) = 0} \<subseteq> {a,b}"
+        using calculation by blast
+      ultimately show ?thesis
+        using eventually_ae_filter_negligible by metis
+    next
+      assume "\<not> (a = d \<or> b = c)"
+      then have case3: "a < d \<and> b > c"
+        using notcase1 by auto
+      let ?I = "{max a c.. min b d}"
+      have "{a..b} \<inter> {c..d} = ?I"
+        by auto
+      have "max a c < min b d"
+        using case3 \<open>a<b\<close> \<open>c<d\<close> by auto
+(*intersection is a non-singleton interval*)
+      have "(\<forall>x\<in>?I. h1 x  \<le> g2 x) \<or> (\<forall>x\<in>?I. g1 x  \<le> h2 x)"
+        sorry
+      hence "(\<forall>x\<in>?I. measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)} = 0)"
+        sorry
+      hence "measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)} = 0" for x
+        sorry
+      thus ?thesis
+        by auto
+    qed
 
+(*
 lemma measurable_cross_section_typeI_div:
   assumes "valid_typeI_division s two_chain"
   shows "(\<lambda>x. measure lebesgue {y. (x, y) \<in> s}) \<in> borel_measurable borel"
@@ -549,8 +490,6 @@ proof -
 qed
 end
 
-thm line_integral_def one_chain_line_integral_def
-
 locale isop2 = R2 i j + G1: green_typeI_typeII_chain s i j "(\<lambda> (x,y). (0 , x))" two_chain_typeI two_chain_typeII for i j s two_chain_typeI two_chain_typeII
   
 begin
@@ -609,9 +548,6 @@ proof -
 qed
 end
 
-thm isop1.area_as_line_integral isop2.area_as_line_integral
-thm isop1_def
-
 locale isop = isop1 i j s two_chain_typeI two_chain_typeII + isop2 i j s two_chain_typeI two_chain_typeII for s i j two_chain_typeI two_chain_typeII +
 assumes
     green_assumptions:
@@ -638,7 +574,6 @@ proof -
   ultimately show ?thesis by auto
 qed
 end
-
 
 lemma geom_le_arith_mean:
   fixes a::real and b::real
@@ -742,9 +677,6 @@ proof -
     by presburger
 qed
 
-find_theorems "integral\<^sup>L"
-find_theorems "AE x in lebesgue. _" name: Henstock
-
 (*
 Let p be a path, so p is a map from an interval I to the plane, p :  I \<rightarrow> \<real>\<^sup>2, and suppose it is injective on I (ignoring endpoints).
 >>> inj_on p (I - {Max I})
@@ -773,17 +705,6 @@ this will guarantee that s is increasing and injective, which will guarantee a w
 A regularly parametrised curve (RPC) is a smooth curve who's derivative never vanishes. We need our curve to be piecewise regularly parametrised.
 *)
 
-find_theorems name: Green.green_typeI_typeII_chain.GreenThm_typeI_typeII_divisible_region_boundary
-find_theorems "_ \<Longrightarrow> green_typeI_typeII_chain _ _ _ _ _  _"
 
-
-term lborel
-term distr
-term PiM
-thm PiM_def
-find_theorems "\<Prod> _"
-thm lborel_def
-term integral
-thm integral_def
 
 end
