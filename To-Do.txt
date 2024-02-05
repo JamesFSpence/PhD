@@ -1,6 +1,8 @@
 ----TO-DO----
 
 05/02
+Make list of dirty proofs in to do list
+Look at thesis relating Analysis to hybrid systems
 Think about 9 month review by end of April
   - Draft of chapters
   - eg. summary of the problem, definitions, background, literature review
