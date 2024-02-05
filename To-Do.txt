@@ -1,5 +1,10 @@
 ----TO-DO----
 
+05/02
+Think about 9 month review
+  - Draft of chapters
+  - eg. summary of the problem, definitions, background, literature review
+
 31/01
 Prove union of TypeI regions has measurable cross section function
 Read graph algorithms chapter Mohammad wrote
