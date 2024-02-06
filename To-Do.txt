@@ -1,6 +1,7 @@
 ----TO-DO----
 
 05/02
+Contact Chris Hamson about being 3rd supervisor? 
 Make list of dirty proofs in to do list
 Look at thesis relating Analysis to hybrid systems
 Think about 9 month review by end of April
