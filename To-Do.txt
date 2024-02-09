@@ -1,6 +1,7 @@
 ----TO-DO----
 
 05/02
+Install Zulip on Laptop
 Write progress report
 Complete module evaluations
 Isoperimetric Deadline - 19/02
