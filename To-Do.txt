@@ -12,8 +12,7 @@ Look at thesis relating Analysis to hybrid systems
 Think about 9 month review by end of April
   - Draft of chapters
   - eg. summary of the problem, definitions, background, literature review
-Look into formalisations of algorithms
-Read graph algorithms chapter Mohammad wrote
+Read graph algorithms chapter Mohammad wrote - Look into formalisations of algorithms
 
 31/01
 Prove union of TypeI regions has measurable cross section function
