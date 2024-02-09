@@ -8,7 +8,7 @@ Isoperimetric Deadline - 19/02 - followed by literature review to decide on topi
 Complete internship form
 Contact Chris Hampson about being 3rd supervisor? 
 Make list of dirty proofs in to do list
-Look at thesis relating Analysis to hybrid systems
+Look at thesis on hybrid systems (sent on Zulip)
 Think about 9 month review by end of April
   - Draft of chapters
   - eg. summary of the problem, definitions, background, literature review
