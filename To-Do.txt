@@ -1,7 +1,8 @@
 ----TO-DO----
 
 05/02
-Add theorem stating if function is cts, ge 0 and gt 0 at some point then the integral is gt 0 - using integral_eq_0_iff
+Isoperimetric Deadline - 19/02
+Complete internship form
 Contact Chris Hampson about being 3rd supervisor? 
 Make list of dirty proofs in to do list
 Look at thesis relating Analysis to hybrid systems
@@ -13,7 +14,6 @@ Read graph algorithms chapter Mohammad wrote
 
 31/01
 Prove union of TypeI regions has measurable cross section function
-Ask about a better way to do proof by cases (i.e not nesting proofs)
 
 24/01
 Write progress report
@@ -30,8 +30,11 @@ Look at Green's Theorem proof and try to reconcile it with Isoperimetric Problem
 Ask whether I can use my own funding to go to Bonn event - i.e do they have office space
 Apply to LMS funding
 
-------------
 
+---- Non urgent tasks ----
+Add theorem stating if function is cts, ge 0 and gt 0 at some point then the integral is gt 0 - using integral_eq_0_iff
 Integral of intervals minus finite number of points are equal - typedef - transfer integrals to this type - Intervals form a semiring_of_sets!
 Finish Interval.thy file
 Using twice differentiable version of Green's Theorem that Mohammad intends to formalise
+
+---- Dirty Proofs ----
