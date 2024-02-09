@@ -1,6 +1,7 @@
 ----TO-DO----
 
 05/02
+Add theorem stating if function is cts, ge 0 and gt 0 at some point then the integral is gt 0 - using integral_eq_0_iff
 Contact Chris Hampson about being 3rd supervisor? 
 Make list of dirty proofs in to do list
 Look at thesis relating Analysis to hybrid systems
