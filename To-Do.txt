@@ -1,6 +1,8 @@
 ----TO-DO----
 
 05/02
+Write progress report
+Complete module evaluations
 Isoperimetric Deadline - 19/02
 Complete internship form
 Contact Chris Hampson about being 3rd supervisor? 
@@ -14,9 +16,6 @@ Read graph algorithms chapter Mohammad wrote
 
 31/01
 Prove union of TypeI regions has measurable cross section function
-
-24/01
-Write progress report
 
 18/01
 Come up with specification for region and boundary.
