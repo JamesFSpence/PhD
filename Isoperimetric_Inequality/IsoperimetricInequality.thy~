@@ -185,85 +185,149 @@ proof -
     by (metis (mono_tags, opaque_lifting) assms image_iff)
 qed
 
+lemma non_negligible_betw_cts_fns:
+  fixes a b ::real and g h ::"real\<Rightarrow>real"
+(*g1 and g2 are the top/bottom resp. bounding functions for a typeI cube, likewise for h1 and h2.
+This lemma is used to show that if we have two typeI cubes, that have negligible intersection,
+then their bounding functions cannot cross over at any point. i.e g2 \<ge> h1 or h2 \<ge> g1 on the entire range.*)
+  assumes "a<b"
+          "continuous_on {a..b} g" "continuous_on {a..b} h"
+          "\<exists>x\<in>{a..b}. h x < g x"
+        shows "\<not> negligible {(x,y). x \<in> {a..b} \<and> y \<in> {h x..g x}}"
+proof-
+  let ?F = "(\<lambda>x. max 0 (g x - h x))"
+  have cont_on: "continuous_on {a..b} ?F"
+    by (simp add: assms continuous_on_diff continuous_on_max)
+  moreover have "\<not>(\<forall>x\<in>{a..b}. ?F x = 0)"
+    using assms by fastforce
+  ultimately have 0: "integral {a..b} ?F \<noteq> 0"
+    apply-
+    apply(drule integral_eq_0_iff)
+    by(auto simp add: assms)
+  have " x \<in> {a..b} \<Longrightarrow> 0 \<le> ?F x" for x
+    by auto
+  moreover have "?F integrable_on {a..b}"  
+    using integrable_continuous_real cont_on by blast
+  ultimately have "integral {a..b} ?F \<ge> 0"
+    using integral_nonneg by blast
+  hence "integral {a..b} ?F > 0"
+    using 0 by auto
+(*the lemma should follow from this and the fact that g and h are continuous...
+  but I couldn't find any theorems to support this*)
+  obtain x where x_facts:"x\<in>{a..b}" "h x < g x" using assms by auto
+  let ?X = "(g x + h x)/2"
+  have "?X \<in> {h x..g x}" using x_facts by auto
+  let ?\<epsilon> = "(g x - h x) / 4"
+  have 3:"?X + ?\<epsilon> = g x - ?\<epsilon>" "?X - ?\<epsilon> = h x + ?\<epsilon>" by(auto simp add: field_simps)
+  have "?\<epsilon> > 0" using x_facts by auto
+  let ?g_clamp = "(\<lambda>x. g (clamp a b x))"
+  let ?h_clamp = "(\<lambda>x. h (clamp a b x))"
+  have "\<forall>x\<in>{a..b}. isCont ?g_clamp x" "\<forall>x\<in>{a..b}. isCont ?h_clamp x"
+    using clamp_continuous_at assms by (metis box_real(2))+
+  hence "(\<forall>e>0. \<exists>d>0. \<forall>x'. dist x' x < d \<longrightarrow> dist (?g_clamp x') (?g_clamp x) < e)"
+        "(\<forall>e>0. \<exists>d>0. \<forall>x'. dist x' x < d \<longrightarrow> dist (?h_clamp x') (?h_clamp x) < e)"
+    using  x_facts(1) continuous_at_eps_delta
+    by (metis box_real(2) clamp_cancel_cbox)+
+  then obtain \<delta>\<^sub>1 \<delta>\<^sub>2 where deltas:"\<forall>x'. dist x' x < \<delta>\<^sub>1 \<longrightarrow> dist (?g_clamp x') (?g_clamp x) < ?\<epsilon>"
+                         "\<forall>x'. dist x' x < \<delta>\<^sub>2 \<longrightarrow> dist (?h_clamp x') (?h_clamp x) < ?\<epsilon>"
+    using \<open>?\<epsilon> > 0\<close> by metis
+  let ?\<delta> = "min \<delta>\<^sub>1 \<delta>\<^sub>2"
+  have "\<forall>x'. dist x' x < ?\<delta> \<longrightarrow> dist (?g_clamp x') (?g_clamp x) < ?\<epsilon>"
+       "\<forall>x'. dist x' x < ?\<delta> \<longrightarrow> dist (?h_clamp x') (?h_clamp x) < ?\<epsilon>"
+    using deltas by auto
+  hence "\<forall>x'\<in>{x-?\<delta><..<x+?\<delta>}. dist (?g_clamp x') (?g_clamp x) < ?\<epsilon>"
+        "\<forall>x'\<in>{x-?\<delta><..<x+?\<delta>}. dist (?h_clamp x') (?h_clamp x) < ?\<epsilon>"
+    by (metis ball_eq_greaterThanLessThan dist_commute mem_ball)+
+  hence "\<forall>x'\<in>{x-?\<delta><..<x+?\<delta>}. ?g_clamp x' > ?g_clamp x -?\<epsilon> \<and> ?h_clamp x' < ?h_clamp x +?\<epsilon>"
+    apply(simp only: dist_real_def)
+    using abs_diff_less_iff by blast
+  moreover have "\<forall>x\<in>{a..b}. ?g_clamp x = g x" "\<forall>x\<in>{a..b}. ?h_clamp x = h x"
+    by auto
+  moreover have "{max (x-?\<delta>) a<..<min (x+?\<delta>) b} \<subseteq> {a..b}"
+                "{max (x-?\<delta>) a<..<min (x+?\<delta>) b} \<subseteq> {x-?\<delta><..<x+?\<delta>}"
+    by auto
+  ultimately have "\<forall>x'\<in>{max (x-?\<delta>) a<..<min (x+?\<delta>) b}. g x' > ?X + ?\<epsilon> \<and> h x' < ?X - ?\<epsilon>"
+    by (metis (full_types) 3 subsetD x_facts(1))
+  hence "\<forall>x'\<in>{max (x-?\<delta>) a<..<min (x+?\<delta>) b}. {?X - ?\<epsilon>..?X + ?\<epsilon>} \<subseteq> {h x'..g x'}"
+    by (meson atLeastatMost_subset_iff less_eq_real_def)
+  hence "{(x',y'). }"
+(*strategy is to find a cbox contained in {(x,y). x \<in> {a..b} \<and> y \<in> {h x..g x}} using epsilon delta definition*)
+
+find_theorems indicator "\<Union>"
+
+
+
 lemma measure_func_of_intersection_AE_zero:
   assumes "typeI_twoCube C" "typeI_twoCube D" "negligible (cubeImage C \<inter> cubeImage D)"
-  shows "AE x in lebesgue. (measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) = 0"
-(*suppose C and D are defined by (a b g1 g2) and (c d h1 h2) resp.
-Case1: if [a,b] and [c,d] are disjoint it follows trivially
-Case2: two of the endpoints are equal, then there is only one x coordinate in C\<inter>D so follows trivially
-Case3: [a,b] and [c,d] intersect on some interval,
-        we must have g1 \<le> h2  or g2 \<ge> h1 on the range
-         otherwise due to continuity of h1 h2 g1 g2 we would have a non negligible intersection
-          from this we get only the endpoints can have intersection which isn't just 1 point*)
+  shows "finite {x. (measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)})\<noteq> 0}"
 proof -
   obtain a b g1 g2 where C_params: "a < b" "(\<forall>x \<in> {a..b}. g2 x \<le> g1 x)"
                        "C = (\<lambda>(x,y). (a + (b-a)*x,
-                                        g2 (a + (b-a)*x) + (g1 (a + (b-a)*x) - g2 (a + (b-a)*x))*y))"
+                                       g2 (a + (b-a)*x) + (g1 (a + (b-a)*x) - g2 (a + (b-a)*x))*y))"
                        "g1 piecewise_C1_differentiable_on {a..b}"
                        "g2 piecewise_C1_differentiable_on {a..b}"
     using typeI_twoCube_def assms by (auto simp add: algebra_simps)
   obtain c d h1 h2 where D_params: "c < d" "(\<forall>x \<in> {c..d}. h2 x \<le> h1 x)"
                        "D = (\<lambda>(x,y). (c + (d-c)*x,
-                                        g2 (c + (d-c)*x) + (g1 (c + (d-c)*x) - g2 (c + (d-c)*x))*y))"
+                                       h2 (c + (d-c)*x) + (h1 (c + (d-c)*x) - h2 (c + (d-c)*x))*y))"
                        "h1 piecewise_C1_differentiable_on {c..d}"
                        "h2 piecewise_C1_differentiable_on {c..d}"
     using typeI_twoCube_def assms by (auto simp add: algebra_simps)
-  have "a<b" "c<d"
-    using C_params D_params by auto
-  have "continuous_on {a..b} g1" "continuous_on {a..b} g2" "continuous_on {c..d} h1" "continuous_on {c..d} h2"
-    using C_params D_params piecewise_C1_differentiable_on_imp_continuous_on by auto
-  have C_point: "cubeImage C = {(x,y). x \<in> {a..b} \<and> y \<in> {g2 x..g1 x}}"
-    using typeI_cubeImage_as_set C_params sledgehammer
-  have D_point: "q\<in>cubeImage D \<Longrightarrow> fst q \<in> {c..d}" for q
-    using typeI_cubeImage_as_set C_params 
-  have abcd_cases: "(a > d \<or> b < c)\<or>(a = d \<or> b = c)\<or>(a < d \<and> b > c)"
+  let ?I = "{a..b} \<inter> {c..d}"
+  have image_int:"cubeImage C \<inter> cubeImage D = {(x,y). x\<in>?I \<and> y \<in> {g2 x..g1 x}\<inter>{h2 x..h1 x}}"
+    using C_params D_params typeI_cubeImage_as_set by auto
+  hence image_int':"cubeImage C \<inter> cubeImage D =
+            {(x,y). x\<in>{max a c..min b d} \<and> y\<in>{max (g2 x) (h2 x).. min (g1 x) (h1 x)}}"
     by auto
-  then consider "(a > d \<or> b < c)"|"(a = d \<or> b = c)"|"(a < d \<and> b > c)"
-    by auto
-  note abcd_cases = this
+  have "{g2 x..g1 x}\<inter>{h2 x..h1 x} = {max (g2 x) (h2 x).. min (g1 x) (h1 x)}" for x by auto 
+  have "a<b" "c<d" using C_params D_params by auto
+  have "?I = {max a c..min b d}" by auto
+  have cont_on: "continuous_on ?I g1" "continuous_on ?I g2"
+                "continuous_on ?I h1" "continuous_on ?I h2"
+    by (meson C_params(4,5) D_params(4,5) continuous_on_subset inf.cobounded1 inf_le2 piecewise_C1_differentiable_on_imp_continuous_on)+
+  
   show ?thesis
-  proof (rule abcd_cases, goal_cases)
-    case 1
-    then have "{a..b} \<inter> {c..d} = {}" by force
-    hence "cubeImage C \<inter> cubeImage D = {}"
-      using C_point D_point by blast
-    thus ?case by simp
-  next
-    case 2
-    have "a = d \<Longrightarrow> {a..b} \<inter> {c..d} = {a}"
-      using \<open>a<b\<close> \<open>c<d\<close> by auto
-    moreover have "b = c \<Longrightarrow> {a..b} \<inter> {c..d} = {b}"
-      using \<open>a<b\<close> \<open>c<d\<close> by auto
-    ultimately have "p\<in> cubeImage C \<inter> cubeImage D \<Longrightarrow> fst p = a \<or> fst p = b" for p
-      using C_point D_point
-      by (metis IntD1 IntD2 atLeastAtMost_iff 2 nle_le)
-    hence "(measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) \<noteq> 0 \<Longrightarrow> x \<in> {a,b}" for x
-      by (metis (mono_tags, lifting) empty_Collect_eq fst_conv insertCI negligible_empty negligible_imp_measure0)
-    moreover have "negligible {a,b} \<and>
-              {x. \<not> (measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)}) = 0} \<subseteq> {a,b}"
-      using calculation by blast
-    ultimately show ?case
-      using eventually_ae_filter_negligible by metis
-  next
-    case 3
-    let ?I = "{max a c.. min b d}"
-    have "{a..b} \<inter> {c..d} = ?I"
-      by auto
-    have "max a c < min b d"
-      using 3 \<open>a<b\<close> \<open>c<d\<close> by auto
-(*intersection is a non-singleton interval*)
-    have "(\<forall>x\<in>?I. h1 x  \<le> g2 x) \<or> (\<forall>x\<in>?I. g1 x  \<le> h2 x)"
-      sorry
-    hence "(\<forall>x\<in>?I. measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)} = 0)"
-      sorry
-    hence "measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)} = 0" for x
-      sorry
+  proof cases
+    assume case1:"(\<exists>x\<in>?I. max (g2 x) (h2 x) < min (g1 x) (h1 x))"
     thus ?thesis
-      by auto
+    proof cases
+      assume "max a c < min b d"
+      have "\<not> negligible {(x,y). x \<in> {max a c..min b d} \<and> y \<in> {max (g2 x) (h2 x).. min (g1 x) (h1 x)}}"
+        apply -
+        apply(rule non_negligible_betw_cts_fns)
+           apply(rule \<open>max a c < min b d\<close>)
+          apply (metis continuous_on_min cont_on(1,3) \<open>?I = {max a c..min b d}\<close>)
+         apply (metis cont_on(2,4) continuous_on_max \<open>?I = {max a c..min b d}\<close>)
+        using case1 \<open>?I = {max a c..min b d}\<close> by blast
+      hence False using image_int' assms(3)
+        by presburger
+      thus ?thesis by auto
+    next
+      assume "\<not>max a c < min b d"
+      hence "finite {max a c..min b d}"
+        using infinite_Icc_iff by blast
+      moreover have "x\<notin>{max a c..min b d} \<Longrightarrow>
+              measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)} = 0" for x
+        using image_int' by fastforce
+      ultimately show ?thesis
+        by (metis (mono_tags, lifting) mem_Collect_eq rev_finite_subset subsetI)
+    qed
+  next
+    assume case2: "\<not>(\<exists>x\<in>?I. max (g2 x) (h2 x) < min (g1 x) (h1 x))"
+    hence "x\<in>?I \<Longrightarrow> finite {max (g2 x) (h2 x)..min (g1 x) (h1 x)}" for x
+      using infinite_Icc_iff by blast
+    hence "x \<in>?I \<Longrightarrow> finite {y. (x,y)\<in>(cubeImage C \<inter> cubeImage D)}" for x
+      using image_int'
+      by (metis (mono_tags, lifting) case_prod_conv mem_Collect_eq rev_finite_subset subsetI)
+    hence "x \<in>?I \<Longrightarrow> measure lebesgue {y. (x,y)\<in>(cubeImage C \<inter> cubeImage D)} = 0" for x
+      using negligible_finite negligible_imp_measure0 by blast
+    moreover have "x\<notin>?I \<Longrightarrow> measure lebesgue {y.(x,y)\<in>(cubeImage C \<inter> cubeImage D)} = 0" for x
+      using image_int by force
+    ultimately show ?thesis
+      using not_finite_existsD by blast
   qed
 qed
 
-(*
 lemma measurable_cross_section_typeI_div:
   assumes "valid_typeI_division s two_chain"
   shows "(\<lambda>x. measure lebesgue {y. (x, y) \<in> s}) \<in> borel_measurable borel"
