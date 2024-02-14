@@ -16,12 +16,8 @@ Think about 9 month review by end of April
   - eg. summary of the problem, definitions, background, literature review
 Read graph algorithms chapter Mohammad wrote - Look into formalisations of algorithms
 
-31/01
-Prove union of TypeI regions has measurable cross section function
-
 18/01
 Come up with specification for region and boundary.
-  - prove functions are analytically valid
   - combine only horiztonal and vertical division and existence of subdivision preconditions with the isoperimetric problem path assumptions (e.g well-parametrised).
 
 03/01
