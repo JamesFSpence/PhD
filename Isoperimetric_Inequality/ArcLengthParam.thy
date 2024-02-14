@@ -3,6 +3,23 @@ theory ArcLengthParam
 begin
 
 (*--------------Useful theorems not specific to arclength param------------*)
+lemma integral_cts_ge_0_gt_0:
+  fixes f::"real \<Rightarrow> real"
+  assumes "a<b" "\<forall>x\<in>{a..b}. f x \<ge> 0" "\<exists>x\<in>{a..b}. f x > 0" "continuous_on {a..b} f"
+  shows "integral {a..b} f > 0"
+proof -
+  have 0: "integral {a..b} f \<noteq> 0"
+    using integral_eq_0_iff by (metis assms dual_order.irrefl)
+  have " x \<in> {a..b} \<Longrightarrow> 0 \<le> f x" for x
+    using assms(2) by auto
+  moreover have "f integrable_on {a..b}"  
+    using integrable_continuous_real assms(4) by blast
+  ultimately have "integral {a..b} f \<ge> 0"
+    using integral_nonneg by blast
+  thus "integral {a..b} f > 0"
+    using 0 by auto
+qed
+
 lemma interval_un_ends: fixes x y:: real
   assumes "x\<le>y"
   shows "{x<..<y}\<union>{x,y} = {x..y}"

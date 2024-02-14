@@ -2,21 +2,71 @@ theory IsoperimetricInequality
   imports Intervals "$AFP/Green/Green"
 begin
 
-lemma integral_cts_ge_0_gt_0:
-  fixes f::"real \<Rightarrow> real"
-  assumes "a<b" "\<forall>x\<in>{a..b}. f x \<ge> 0" "\<exists>x\<in>{a..b}. f x > 0" "continuous_on {a..b} f"
-  shows "integral {a..b} f > 0"
+lemma closed_cross_sections:
+  fixes s::"(real\<times>real) set"
+  assumes "closed s"
+  shows "closed {y. (x,y) \<in> s}" "closed {y. (y,x) \<in> s}"
 proof -
-  have 0: "integral {a..b} f \<noteq> 0"
-    using integral_eq_0_iff by (metis assms dual_order.irrefl)
-  have " x \<in> {a..b} \<Longrightarrow> 0 \<le> f x" for x
-    using assms(2) by auto
-  moreover have "f integrable_on {a..b}"  
-    using integrable_continuous_real assms(4) by blast
-  ultimately have "integral {a..b} f \<ge> 0"
-    using integral_nonneg by blast
-  thus "integral {a..b} f > 0"
+  have 0: "(\<forall>z l. (\<forall>n. z n \<in> s) \<and> z \<longlonglongrightarrow> l \<longrightarrow> l \<in> s)"
+    using \<open>closed s\<close> closed_sequential_limits by auto
+  hence z_pair_tends1: "\<forall>z l. (\<forall>n. (x,z n) \<in> s) \<and> (\<lambda>n. (x,z n)) \<longlonglongrightarrow> (x,l) \<longrightarrow> (x,l)\<in>s"
+    by(auto)
+  have "(\<forall>n. z n \<in> {y. (x,y) \<in> s}) \<and> z \<longlonglongrightarrow> l \<longrightarrow> l \<in> {y. (x,y) \<in> s}" for z l
+  proof -
+    have "(\<forall>n. z n \<in> {y. (x,y) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (\<lambda>n. (x,z n)) \<longlonglongrightarrow> (x,l)"
+      by (simp add: tendsto_Pair)
+    hence "(\<forall>n. z n \<in> {y. (x,y) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (x,l) \<in> s" using z_pair_tends1
+      by auto
+    thus ?thesis by auto
+  qed
+  thus "closed {y. (x,y) \<in> s}" using closed_sequential_limits[of "{y. (x, y) \<in> s}"]
+    by auto
+  have z_pair_tends2: "\<forall>z l. (\<forall>n. (z n, x) \<in> s) \<and> (\<lambda>n. (z n, x)) \<longlonglongrightarrow> (l,x) \<longrightarrow> (l,x)\<in>s"
     using 0 by auto
+  have "(\<forall>n. z n \<in> {y. (y,x) \<in> s}) \<and> z \<longlonglongrightarrow> l \<longrightarrow> l \<in> {y. (y, x) \<in> s}" for z l
+  proof -
+    have "(\<forall>n. z n \<in> {y. (y,x) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (\<lambda>n. (z n,x)) \<longlonglongrightarrow> (l,x)"
+      by (simp add: tendsto_Pair)
+    hence "(\<forall>n. z n \<in> {y. (y,x) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (l,x) \<in> s" using z_pair_tends2
+      by auto
+    thus ?thesis by auto
+  qed
+  thus "closed {y. (y,x) \<in> s}" using closed_sequential_limits[of "{y. (y,x) \<in> s}"]
+    by auto
+qed
+
+lemma bounded_cross_sections:
+  fixes s::"(real\<times>real) set"
+  assumes "bounded s"
+  shows "bounded {y. (x,y) \<in> s}" "bounded {y. (y,x) \<in> s}"
+proof -
+  have x0: "bounded {(a, b). a = x \<and> (a, b) \<in> s}" for x
+    apply(rule bounded_subset[OF assms])
+    by blast
+  have x1: "{y. (x,y) \<in> s} = snd ` {(a,b). (a = x \<and> (a,b)\<in>s)}" for x
+    by(auto simp add: image_def snd_def)
+  show "bounded {y. (x,y) \<in> s}" for x
+    by(simp only: x0 x1 bounded_snd)
+  have y0: "bounded {(a, b). b = x \<and> (a, b) \<in> s}" for x
+    apply(rule bounded_subset[OF assms])
+    by blast
+  have y1: "{y. (y,x) \<in> s} = fst ` {(a,b). (b = x \<and> (a,b)\<in>s)}" for x
+    by(auto simp add: image_def fst_def)
+  show "bounded {y. (y,x) \<in> s}" for x
+    by(simp only: y0 y1 bounded_fst)
+qed
+
+lemma compact_cross_sections:
+fixes s::"(real\<times>real) set"
+  assumes "compact s"
+  shows "compact {y. (x,y) \<in> s}" "compact {y. (y,x) \<in> s}"
+proof - 
+  show "compact {y. (x,y) \<in> s}"
+    using bounded_cross_sections closed_cross_sections assms compact_eq_bounded_closed
+    by metis
+  show "compact {y. (y,x) \<in> s}"
+    using bounded_cross_sections closed_cross_sections assms compact_eq_bounded_closed
+    by metis
 qed
 
 lemma typeI_cubeImage_as_set:
@@ -36,6 +86,28 @@ proof-
   have "cubeImage C = {(x,y). \<exists>z\<in>{0..1}. \<exists>w\<in>{0..1}. x = a + (b-a)*w \<and> y = g2 x + (g1 x - g2 x)*z}"
     unfolding cubeImage_def image_def using assms(3) by(auto split: prod.splits)
   hence "cubeImage C = {(x,y). \<exists>z\<in>{0..1}. x\<in>{a..b} \<and> y = g2 x + (g1 x - g2 x)*z}"
+    using 1 by auto
+  thus ?thesis
+    using 2 by auto
+qed
+
+lemma typeII_cubeImage_as_set:
+  assumes "a < b" "(\<forall>x \<in> {a..b}. g2 x \<le> g1 x)"
+          "C = (\<lambda>(y, x). (g2 (a + (b-a)*x) + (g1 (a + (b-a)*x) - g2 (a + (b-a)*x))*y,
+                             a + (b-a)*x))"
+          "g1 piecewise_C1_differentiable_on {a .. b}"
+          "g2 piecewise_C1_differentiable_on {a .. b}"
+        shows "cubeImage C = {(x,y). y \<in> {a..b} \<and> x \<in> {g2 y..g1 y}}"
+proof -
+  have 1:"(\<exists>w\<in>{0..1}. y = a + (b-a)*w) = (y \<in> {a..b})" for y
+    using assms(1) add_scale_img by (metis (mono_tags, lifting) image_iff)
+  have "y\<in>{a..b} \<Longrightarrow> (\<lambda>x. g2 y + (g1 y - g2 y)*x) ` {0..1} = {g2 y..g1 y}" for y::real
+    by(auto simp add: assms(2) add_scale_img')
+  hence 2: "y\<in>{a..b} \<Longrightarrow> (\<exists>z\<in>{0..1}.  x = g2 y + (g1 y - g2 y)*z) = (x \<in> {g2 y..g1 y})" for x y
+    by (metis (mono_tags, lifting) image_iff)
+  have "cubeImage C = {(x,y). \<exists>w\<in>{0..1}. \<exists>z\<in>{0..1}. y = a + (b-a)*w \<and> x = g2 y + (g1 y - g2 y)*z}"
+    unfolding cubeImage_def image_def using assms(3) by(auto split: prod.splits)
+  hence "cubeImage C = {(x,y). \<exists>z\<in>{0..1}. y\<in>{a..b} \<and> x = g2 y + (g1 y - g2 y)*z}"
     using 1 by auto
   thus ?thesis
     using 2 by auto
@@ -66,28 +138,6 @@ proof -
     apply(subst measure_indicat)
     apply(rule borel_measurable_continuous_on_indicator)
     by (auto simp add: minus_cont C_params(4,5) piecewise_C1_differentiable_on_imp_continuous_on)
-qed
-
-lemma typeII_cubeImage_as_set:
-  assumes "a < b" "(\<forall>x \<in> {a..b}. g2 x \<le> g1 x)"
-          "C = (\<lambda>(y, x). (g2 (a + (b-a)*x) + (g1 (a + (b-a)*x) - g2 (a + (b-a)*x))*y,
-                             a + (b-a)*x))"
-          "g1 piecewise_C1_differentiable_on {a .. b}"
-          "g2 piecewise_C1_differentiable_on {a .. b}"
-        shows "cubeImage C = {(x,y). y \<in> {a..b} \<and> x \<in> {g2 y..g1 y}}"
-proof -
-  have 1:"(\<exists>w\<in>{0..1}. y = a + (b-a)*w) = (y \<in> {a..b})" for y
-    using assms(1) add_scale_img by (metis (mono_tags, lifting) image_iff)
-  have "y\<in>{a..b} \<Longrightarrow> (\<lambda>x. g2 y + (g1 y - g2 y)*x) ` {0..1} = {g2 y..g1 y}" for y::real
-    by(auto simp add: assms(2) add_scale_img')
-  hence 2: "y\<in>{a..b} \<Longrightarrow> (\<exists>z\<in>{0..1}.  x = g2 y + (g1 y - g2 y)*z) = (x \<in> {g2 y..g1 y})" for x y
-    by (metis (mono_tags, lifting) image_iff)
-  have "cubeImage C = {(x,y). \<exists>w\<in>{0..1}. \<exists>z\<in>{0..1}. y = a + (b-a)*w \<and> x = g2 y + (g1 y - g2 y)*z}"
-    unfolding cubeImage_def image_def using assms(3) by(auto split: prod.splits)
-  hence "cubeImage C = {(x,y). \<exists>z\<in>{0..1}. y\<in>{a..b} \<and> x = g2 y + (g1 y - g2 y)*z}"
-    using 1 by auto
-  thus ?thesis
-    using 2 by auto
 qed
 
 lemma measurable_cross_section_typeII:
@@ -174,14 +224,18 @@ proof -
   qed
 qed
 
+lemma typeI_II_cubes_compact:
+  assumes "typeI_twoCube C \<or> typeII_twoCube C"
+  shows "compact (cubeImage C)"
+  using compact_cbox compact_continuous_image cubeImage_def assms typeI_II_cubes_cont_on assms
+  by metis
+
 lemma typeI_div_compact:
   assumes "valid_typeI_division s two_chain"
   shows "compact s"
 proof -
-  have "\<forall>C\<in>two_chain. continuous_on unit_cube C"
-    using assms typeI_II_cubes_cont_on by auto
-  hence "\<forall>C\<in>two_chain. compact (cubeImage C)"
-    using compact_cbox compact_continuous_image cubeImage_def
+  have "\<forall>C\<in>two_chain. compact (cubeImage C)"
+    using compact_cbox compact_continuous_image cubeImage_def assms typeI_II_cubes_cont_on
     by metis
   thus "compact s"
     using gen_division_def compact_Union
@@ -192,10 +246,8 @@ lemma typeII_div_compact:
 assumes "valid_typeII_division s two_chain"
   shows "compact s"
 proof -
-  have "\<forall>C\<in>two_chain. continuous_on unit_cube C"
-    using assms typeI_II_cubes_cont_on by auto
-  hence "\<forall>C\<in>two_chain. compact (cubeImage C)"
-    using compact_cbox compact_continuous_image cubeImage_def
+  have "\<forall>C\<in>two_chain. compact (cubeImage C)"
+    using compact_cbox compact_continuous_image cubeImage_def assms typeI_II_cubes_cont_on
     by metis
   thus "compact s"
     using gen_division_def compact_Union
@@ -268,7 +320,7 @@ proof-
     using 1 negligible_subset by blast+
 qed
 
-lemma  measure_func_of_intersection_typeI:
+lemma measure_func_of_intersection_typeI:
   assumes "typeI_twoCube C" "typeI_twoCube D" "negligible (cubeImage C \<inter> cubeImage D)"
   shows "finite {x. (measure lebesgue {y. (x, y) \<in> (cubeImage C \<inter> cubeImage D)})\<noteq> 0}"
 proof -
@@ -386,103 +438,250 @@ proof -
   qed
 qed
 
+lemma borel_measurable_minus_finite: (*This lemma probably belongs in another theory file*)
+  fixes f::"real \<Rightarrow> real"
+  assumes "finite {x. g x \<noteq> f x}" "f\<in>borel_measurable borel"
+  shows "g \<in> borel_measurable borel"
+  apply(rule measurable_discrete_difference[of _ _ _ "{x. g x \<noteq> f x}"])
+  by(auto simp add: assms countable_finite)
+
+lemma typeI_measure_func_induction:
+  assumes "finite A" "b \<in> {x. typeI_twoCube x}" "A \<subseteq> {x. typeI_twoCube x}" "b \<notin> A"
+  "finite {x. measure lebesgue {y. (x, y) \<in> \<Union> (cubeImage ` A)} \<noteq>
+            (\<Sum>C\<in>A. measure lebesgue {y. (x, y) \<in> cubeImage C})}"
+    "\<forall>C\<in>A. negligible ((cubeImage C) \<inter> (cubeImage b))"
+shows "finite {x. measure lebesgue {y. (x, y) \<in> \<Union> (cubeImage ` insert b A)} \<noteq>
+                (\<Sum>C\<in>insert b A. measure lebesgue {y. (x, y) \<in> cubeImage C})}"
+proof-
+  let ?\<mu>\<^sub>L = "(\<lambda>C. measure lebesgue C)"
+  let ?A\<^sub>x = "(\<lambda>x. (\<lambda>C. {y. (x, y) \<in> cubeImage C}) ` A)"
+  let ?b\<^sub>x = "(\<lambda>x. (\<lambda>C. {y. (x, y) \<in> cubeImage C}) b)"
+  let ?A\<^sub>x_int_b\<^sub>x = "(\<lambda>x. (\<lambda>C. {y. (x, y) \<in> cubeImage C} \<inter> (?b\<^sub>x x)) ` A)"
+  have slice_union_rewrite: "{y. (x, y) \<in> \<Union> (cubeImage ` A)} = (\<Union>(?A\<^sub>x x))" for x
+    by blast
+  have union_union_rewrite: "{y. (x, y) \<in> \<Union> (cubeImage ` insert b A)} =
+        (\<Union>(?A\<^sub>x x))\<union>(?b\<^sub>x x)" for x
+    by blast
+  have insert_rewrite: "(\<Sum>C\<in>insert b A. ?\<mu>\<^sub>L {y. (x, y) \<in> cubeImage C}) = 
+        (\<Sum>C\<in>A. ?\<mu>\<^sub>L {y. (x, y) \<in> cubeImage C}) + ?\<mu>\<^sub>L (?b\<^sub>x x)" for x
+    using comm_monoid_add_class.sum.insert assms by auto
+  have cube_sect_lmeas:"typeI_twoCube C \<Longrightarrow> {y. (x, y) \<in> cubeImage C} \<in> lmeasurable" for x C
+    by(simp add: typeI_II_cubes_compact compact_cross_sections lmeasurable_compact)
+  hence measure_union_sum: "?\<mu>\<^sub>L ((\<Union>(?A\<^sub>x x))\<union>(?b\<^sub>x x)) =
+                                ?\<mu>\<^sub>L (\<Union>(?A\<^sub>x x)) + ?\<mu>\<^sub>L (?b\<^sub>x x) - ?\<mu>\<^sub>L ((\<Union>(?A\<^sub>x x))\<inter>(?b\<^sub>x x))" for x
+    apply(intro measure_Un3 fmeasurable.finite_Union)
+    using assms image_def by auto
+  have union_rewrite: "(\<Union>(?A\<^sub>x x))\<inter>(?b\<^sub>x x) = (\<Union>(?A\<^sub>x_int_b\<^sub>x x))" for x
+    by auto
+  have measure_union_le_sum: "?\<mu>\<^sub>L (\<Union>(?A\<^sub>x_int_b\<^sub>x x)) \<le> sum (?\<mu>\<^sub>L) (?A\<^sub>x_int_b\<^sub>x x)" for x
+    apply(intro measure_Union_le)
+    using assms(1,2,3) cube_sect_lmeas assms(2) by (auto intro: measure_Union_le)
+  have "finite {x. sum (?\<mu>\<^sub>L) (?A\<^sub>x_int_b\<^sub>x x) \<noteq> 0}"
+  proof -
+    have 0: "{y. (x, y) \<in> cubeImage C} \<inter> (?b\<^sub>x x) = {y. (x, y) \<in> cubeImage C \<inter> cubeImage b}" for x C
+      by auto
+    moreover have "\<forall>C\<in>A. finite {x. (?\<mu>\<^sub>L {y. (x, y) \<in> cubeImage C \<inter> cubeImage b}) \<noteq> 0}"
+      using measure_func_of_intersection_typeI assms(2,3,6) by blast
+    ultimately show "finite {x. sum (?\<mu>\<^sub>L) (?A\<^sub>x_int_b\<^sub>x x) \<noteq> 0}"
+      by (simp add: measure_func_of_intersection_typeI assms sum_nonneg_eq_0_iff)
+  qed
+  moreover have "sum (?\<mu>\<^sub>L) (?A\<^sub>x_int_b\<^sub>x x) = 0 \<Longrightarrow> ?\<mu>\<^sub>L (\<Union>(?A\<^sub>x_int_b\<^sub>x x)) = 0" for x
+    using measure_union_le_sum by (metis antisym_conv measure_nonneg)
+  ultimately have finite_neq_0: "finite {x. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>x_int_b\<^sub>x x)) \<noteq> 0}"
+    by (meson Collect_mono rev_finite_subset)
+  have "?\<mu>\<^sub>L (\<Union>(?A\<^sub>x_int_b\<^sub>x x)) = 0 \<Longrightarrow> ?\<mu>\<^sub>L ((\<Union>(?A\<^sub>x x))\<union>(?b\<^sub>x x)) = ?\<mu>\<^sub>L (\<Union>(?A\<^sub>x x)) + ?\<mu>\<^sub>L (?b\<^sub>x x)" for x
+    using measure_union_sum union_rewrite by (metis diff_zero)
+  hence "{x. ?\<mu>\<^sub>L {y. (x, y) \<in> \<Union> (cubeImage ` insert b A)} \<noteq>
+                  (\<Sum>C\<in>insert b A. ?\<mu>\<^sub>L {y. (x, y) \<in> cubeImage C})} \<subseteq>
+    {x. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>x_int_b\<^sub>x x)) \<noteq> 0} \<union> {x. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>x x)) \<noteq> (\<Sum>C\<in>A. ?\<mu>\<^sub>L {y. (x, y) \<in> cubeImage C})}"
+    using insert_rewrite union_union_rewrite by auto
+  moreover have "finite ({x. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>x_int_b\<^sub>x x)) \<noteq> 0} \<union>
+    {x. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>x x)) \<noteq> (\<Sum>C\<in>A. ?\<mu>\<^sub>L {y. (x, y) \<in> cubeImage C})})"
+    using finite_neq_0 assms(5) slice_union_rewrite by force
+  ultimately show ?thesis
+    using finite_subset by blast
+qed
+
+lemma typeII_measure_func_induction:
+  assumes "finite A" "b \<in> {x. typeII_twoCube x}" "A \<subseteq> {x. typeII_twoCube x}" "b \<notin> A"
+  "finite {y. measure lebesgue {x. (x, y) \<in> \<Union> (cubeImage ` A)} \<noteq>
+            (\<Sum>C\<in>A. measure lebesgue {x. (x, y) \<in> cubeImage C})}"
+    "\<forall>C\<in>A. negligible ((cubeImage C) \<inter> (cubeImage b))"
+shows "finite {y. measure lebesgue {x. (x, y) \<in> \<Union> (cubeImage ` insert b A)} \<noteq>
+                (\<Sum>C\<in>insert b A. measure lebesgue {x. (x, y) \<in> cubeImage C})}"
+proof-
+  let ?\<mu>\<^sub>L = "(\<lambda>C. measure lebesgue C)"
+  let ?A\<^sub>y = "(\<lambda>y. (\<lambda>C. {x. (x, y) \<in> cubeImage C}) ` A)"
+  let ?b\<^sub>y = "(\<lambda>y. (\<lambda>C. {x. (x, y) \<in> cubeImage C}) b)"
+  let ?A\<^sub>y_int_b\<^sub>y = "(\<lambda>y. (\<lambda>C. {x. (x, y) \<in> cubeImage C} \<inter> (?b\<^sub>y y)) ` A)"
+  have slice_union_rewrite: "{x. (x, y) \<in> \<Union> (cubeImage ` A)} = (\<Union>(?A\<^sub>y y))" for y
+    by blast
+  have union_union_rewrite: "{x. (x, y) \<in> \<Union> (cubeImage ` insert b A)} = (\<Union>(?A\<^sub>y y))\<union>(?b\<^sub>y y)" for y
+    by blast
+  have insert_rewrite: "(\<Sum>C\<in>insert b A. ?\<mu>\<^sub>L {x. (x, y) \<in> cubeImage C}) = 
+        (\<Sum>C\<in>A. ?\<mu>\<^sub>L {x. (x, y) \<in> cubeImage C}) + ?\<mu>\<^sub>L (?b\<^sub>y y)" for y
+    using comm_monoid_add_class.sum.insert assms by auto
+  have cube_sect_lmeas:"typeII_twoCube C \<Longrightarrow> {x. (x, y) \<in> cubeImage C} \<in> lmeasurable" for y C
+    by(simp add: typeI_II_cubes_compact compact_cross_sections lmeasurable_compact)
+  hence measure_union_sum: "?\<mu>\<^sub>L ((\<Union>(?A\<^sub>y y))\<union>(?b\<^sub>y y)) =
+                                ?\<mu>\<^sub>L (\<Union>(?A\<^sub>y y)) + ?\<mu>\<^sub>L (?b\<^sub>y y) - ?\<mu>\<^sub>L ((\<Union>(?A\<^sub>y y))\<inter>(?b\<^sub>y y))" for y
+    apply(intro measure_Un3 fmeasurable.finite_Union)
+    using assms image_def by auto
+  have union_rewrite: "(\<Union>(?A\<^sub>y y))\<inter>(?b\<^sub>y y) = (\<Union>(?A\<^sub>y_int_b\<^sub>y y))" for y
+    by auto
+  have measure_union_le_sum: "?\<mu>\<^sub>L (\<Union>(?A\<^sub>y_int_b\<^sub>y y)) \<le> sum (?\<mu>\<^sub>L) (?A\<^sub>y_int_b\<^sub>y y)" for y
+    apply(intro measure_Union_le)
+    using assms(1,2,3) cube_sect_lmeas assms(2) by (auto intro: measure_Union_le)
+  have "finite {y. sum (?\<mu>\<^sub>L) (?A\<^sub>y_int_b\<^sub>y y) \<noteq> 0}"
+  proof -
+    have 0: "{x. (x, y) \<in> cubeImage C} \<inter> (?b\<^sub>y y) = {x. (x, y) \<in> cubeImage C \<inter> cubeImage b}" for y C
+      by auto
+    moreover have "\<forall>C\<in>A. finite {y. (?\<mu>\<^sub>L {x. (x, y) \<in> cubeImage C \<inter> cubeImage b}) \<noteq> 0}"
+      using measure_func_of_intersection_typeII assms(2,3,6) by blast
+    ultimately show "finite {x. sum (?\<mu>\<^sub>L) (?A\<^sub>y_int_b\<^sub>y x) \<noteq> 0}"
+      by (simp add: measure_func_of_intersection_typeI assms sum_nonneg_eq_0_iff)
+  qed
+  moreover have "sum (?\<mu>\<^sub>L) (?A\<^sub>y_int_b\<^sub>y x) = 0 \<Longrightarrow> ?\<mu>\<^sub>L (\<Union>(?A\<^sub>y_int_b\<^sub>y x)) = 0" for x
+    using measure_union_le_sum by (metis antisym_conv measure_nonneg)
+  ultimately have finite_neq_0: "finite {x. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>y_int_b\<^sub>y x)) \<noteq> 0}"
+    by (meson Collect_mono rev_finite_subset)
+  have "?\<mu>\<^sub>L (\<Union>(?A\<^sub>y_int_b\<^sub>y y)) = 0 \<Longrightarrow> ?\<mu>\<^sub>L ((\<Union>(?A\<^sub>y y))\<union>(?b\<^sub>y y)) = ?\<mu>\<^sub>L (\<Union>(?A\<^sub>y y)) + ?\<mu>\<^sub>L (?b\<^sub>y y)" for y
+    using measure_union_sum union_rewrite by (metis diff_zero)
+  hence "{y. ?\<mu>\<^sub>L {x. (x, y) \<in> \<Union> (cubeImage ` insert b A)} \<noteq>
+                  (\<Sum>C\<in>insert b A. ?\<mu>\<^sub>L {x. (x, y) \<in> cubeImage C})} \<subseteq>
+    {y. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>y_int_b\<^sub>y y)) \<noteq> 0} \<union> {y. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>y y)) \<noteq> (\<Sum>C\<in>A. ?\<mu>\<^sub>L {x. (x, y) \<in> cubeImage C})}"
+    using insert_rewrite union_union_rewrite by auto
+  moreover have "finite ({y. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>y_int_b\<^sub>y y)) \<noteq> 0} \<union>
+    {y. ?\<mu>\<^sub>L (\<Union>(?A\<^sub>y y)) \<noteq> (\<Sum>C\<in>A. ?\<mu>\<^sub>L {x. (x, y) \<in> cubeImage C})})"
+    using finite_neq_0 assms(5) slice_union_rewrite by force
+  ultimately show ?thesis
+    using finite_subset by blast
+qed
+
 lemma measurable_cross_section_typeI_div:
   assumes "valid_typeI_division s two_chain"
   shows "(\<lambda>x. measure lebesgue {y. (x, y) \<in> s}) \<in> borel_measurable borel"
 proof -
-  have "\<forall>C\<in>two_chain. (\<lambda>x. measure lebesgue {y. (x,y)\<in>cubeImage C}) \<in>borel_measurable borel"
-    using measurable_cross_section_typeI assms by auto
-  hence "\<forall>C\<in>two_chain. \<forall>D\<in>two_chain.
-        (\<lambda>x. measure lebesgue {y. (x,y)\<in>cubeImage C} + measure lebesgue {y. (x,y)\<in>cubeImage D}) 
-        \<in>borel_measurable borel"
-    using borel_measurable_add by blast
   have "finite two_chain"
-    using valid_two_chain_def assms gen_division_def
-    by (meson assms finite_imageD)
-(*useful theorems*)
-  thm measure_Union_le
-  hence "(\<lambda>x. \<Sum>C\<in>two_chain. measure lebesgue {y. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
+    using valid_two_chain_def assms gen_division_def by (meson assms finite_imageD)
+  have "pairwise (\<lambda>C D. negligible (C \<inter> D)) (cubeImage ` two_chain)"
+    using assms gen_division_def by auto
+  hence pairwise_negligible_cubeImage: "pairwise (\<lambda>C D. negligible (cubeImage C \<inter> cubeImage D)) (two_chain)"
+    using assms inj_on_def[of cubeImage two_chain] pairwise_def
+        pairwise_image[of "(\<lambda>C D. negligible (C \<inter> D))" cubeImage two_chain] valid_two_chain_def
+    by (metis (mono_tags, lifting))
+  have "\<forall>C\<in>{x. typeI_twoCube x}. compact (cubeImage C)"
+    using compact_cbox compact_continuous_image cubeImage_def typeI_II_cubes_cont_on
+    by (metis mem_Collect_eq)
+  have "\<forall>C\<in>two_chain. compact (cubeImage C)"
+    using compact_cbox compact_continuous_image cubeImage_def assms typeI_II_cubes_cont_on
+    by (metis)
+  hence sections_closed: "S \<in> (\<lambda>C. {y. (x, y) \<in> cubeImage C}) ` two_chain \<Longrightarrow> closed S" for S x
+    using closed_cross_sections compact_imp_closed by blast
+  have s_union:"s = \<Union>(cubeImage ` two_chain)"
+    using assms gen_division_def by metis
+  hence s_section_as_union:"{y. (x, y) \<in> s} = {y. (x,y)\<in>\<Union> (cubeImage ` two_chain)}" for x
+    by auto
+  hence s_section_union:"{y. (x,y)\<in>s} = (\<Union>C\<in>two_chain. {y. (x,y)\<in> cubeImage C})" for x
+    by blast
+  have "\<forall>C\<in>two_chain. (\<lambda>x. measure lebesgue {y. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
+    using measurable_cross_section_typeI assms by blast
+  hence sum_measurable:"(\<lambda>x. (\<Sum>C\<in>two_chain. measure lebesgue {y. (x, y) \<in> cubeImage C})) \<in> borel_measurable borel"
+    by(simp add: borel_measurable_sum)
+  have sum_measure_le: "sum (measure lebesgue) ((\<lambda>C. {y. (x, y) \<in> cubeImage C}) ` two_chain) \<le> 
+                        sum (measure lebesgue \<circ> (\<lambda>C. {y. (x, y) \<in> cubeImage C})) two_chain" for x
+    apply(rule sum_image_le)
+    using measure_nonneg sum_image_le \<open>finite two_chain\<close> by auto
+  have "(measure lebesgue) {y. (x,y)\<in>s} \<le> (\<Sum>C\<in>two_chain. measure lebesgue {y. (x, y) \<in> cubeImage C})" for x
+    apply(subst s_section_union)
+    apply(rule xt1(6))
+     defer
+     apply(rule measure_Union_le)  
+    using \<open>finite two_chain\<close> sections_closed borel_closed sets_completionI_sets sum_measure_le
+    by auto
+  have "pairwise (\<lambda>C D. negligible (cubeImage C \<inter> cubeImage D)) (two_chain) \<longrightarrow> 
+          finite {x. (measure lebesgue {y. (x, y) \<in> s} \<noteq>
+          sum (\<lambda>C. measure lebesgue {y. (x,y) \<in> cubeImage C}) two_chain)}"
+    using \<open>finite two_chain\<close>
     apply-
-    thm finite.induct
-    apply(rule finite.induct[of two_chain])
-      apply(simp)
-     apply(simp)
-    using borel_measurable_add suminf_def
-    find_theorems finite measure 
-    find_theorems "\<Sum>x. _"
-    find_theorems "_ sums _"
-    find_theorems name: induct finite "?a:: 'a set"
+    apply(drule finite_subset_induct'[of two_chain "{x. typeI_twoCube x}" 
+                  "(\<lambda>F. (pairwise (\<lambda>C D. negligible (cubeImage C \<inter> cubeImage D)) F) \<longrightarrow>
+                   finite {x. measure lebesgue {y. (x, y) \<in> \<Union>(cubeImage ` F)}
+                   \<noteq> (\<Sum>C\<in>F. measure lebesgue {y. (x, y) \<in> cubeImage C})})"])
+    using assms apply blast
+      apply simp
+     apply(simp only: symmetric[OF atomize_imp])
+     apply(rule typeI_measure_func_induction)
+          apply(simp)+
+      apply (meson pairwise_insert)
+     apply (metis (no_types, lifting) pairwise_insert)
+    by(simp add: pairwise_negligible_cubeImage assms s_union)
+  thus "(\<lambda>x. measure lebesgue {y. (x, y) \<in> s}) \<in> borel_measurable borel"
+    using borel_measurable_minus_finite sum_measurable
+    by (simp add: pairwise_negligible_cubeImage)
+qed
 
 lemma measurable_cross_section_typeII_div:
-  assumes "valid_typeI_division s two_chain"
+  assumes "valid_typeII_division s two_chain"
   shows "(\<lambda>y. measure lebesgue {x. (x, y) \<in> s}) \<in> borel_measurable borel"
-  sorry
-
-lemma closed_cross_sections:
-  fixes s::"(real\<times>real) set"
-  assumes "closed s"
-  shows "closed {y. (x,y) \<in> s}" "closed {y. (y,x) \<in> s}"
-proof -
-  have 0: "(\<forall>z l. (\<forall>n. z n \<in> s) \<and> z \<longlonglongrightarrow> l \<longrightarrow> l \<in> s)"
-    using \<open>closed s\<close> closed_sequential_limits by auto
-  hence z_pair_tends1: "\<forall>z l. (\<forall>n. (x,z n) \<in> s) \<and> (\<lambda>n. (x,z n)) \<longlonglongrightarrow> (x,l) \<longrightarrow> (x,l)\<in>s"
-    by(auto)
-  have "(\<forall>n. z n \<in> {y. (x,y) \<in> s}) \<and> z \<longlonglongrightarrow> l \<longrightarrow> l \<in> {y. (x,y) \<in> s}" for z l
-  proof -
-    have "(\<forall>n. z n \<in> {y. (x,y) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (\<lambda>n. (x,z n)) \<longlonglongrightarrow> (x,l)"
-      by (simp add: tendsto_Pair)
-    hence "(\<forall>n. z n \<in> {y. (x,y) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (x,l) \<in> s" using z_pair_tends1
-      by auto
-    thus ?thesis by auto
-  qed
-  thus "closed {y. (x,y) \<in> s}" using closed_sequential_limits[of "{y. (x, y) \<in> s}"]
+proof-
+  have "finite two_chain"
+    using valid_two_chain_def assms gen_division_def by (meson assms finite_imageD)
+  have "pairwise (\<lambda>C D. negligible (C \<inter> D)) (cubeImage ` two_chain)"
+    using assms gen_division_def by auto
+  hence pairwise_negligible_cubeImage: "pairwise (\<lambda>C D. negligible (cubeImage C \<inter> cubeImage D)) (two_chain)"
+    using assms inj_on_def[of cubeImage two_chain] pairwise_def
+        pairwise_image[of "(\<lambda>C D. negligible (C \<inter> D))" cubeImage two_chain] valid_two_chain_def
+    by (metis (mono_tags, lifting))
+  have "\<forall>C\<in>{x. typeI_twoCube x}. compact (cubeImage C)"
+    using compact_cbox compact_continuous_image cubeImage_def typeI_II_cubes_cont_on
+    by (metis mem_Collect_eq)
+  have "\<forall>C\<in>two_chain. compact (cubeImage C)"
+    using compact_cbox compact_continuous_image cubeImage_def assms typeI_II_cubes_cont_on
+    by (metis)
+  hence sections_closed: "S \<in> (\<lambda>C. {x. (x, y) \<in> cubeImage C}) ` two_chain \<Longrightarrow> closed S" for S y
+    using closed_cross_sections compact_imp_closed by blast
+  have s_union:"s = \<Union>(cubeImage ` two_chain)"
+    using assms gen_division_def by metis
+  hence s_section_as_union:"{x. (x, y) \<in> s} = {x. (x,y)\<in>\<Union> (cubeImage ` two_chain)}" for y
     by auto
-  have z_pair_tends2: "\<forall>z l. (\<forall>n. (z n, x) \<in> s) \<and> (\<lambda>n. (z n, x)) \<longlonglongrightarrow> (l,x) \<longrightarrow> (l,x)\<in>s"
-    using 0 by auto
-  have "(\<forall>n. z n \<in> {y. (y,x) \<in> s}) \<and> z \<longlonglongrightarrow> l \<longrightarrow> l \<in> {y. (y, x) \<in> s}" for z l
-  proof -
-    have "(\<forall>n. z n \<in> {y. (y,x) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (\<lambda>n. (z n,x)) \<longlonglongrightarrow> (l,x)"
-      by (simp add: tendsto_Pair)
-    hence "(\<forall>n. z n \<in> {y. (y,x) \<in> s}) \<and> z \<longlonglongrightarrow> l \<Longrightarrow> (l,x) \<in> s" using z_pair_tends2
-      by auto
-    thus ?thesis by auto
-  qed
-  thus "closed {y. (y,x) \<in> s}" using closed_sequential_limits[of "{y. (y,x) \<in> s}"]
+  hence s_section_union:"{x. (x,y)\<in>s} = (\<Union>C\<in>two_chain. {x. (x,y)\<in> cubeImage C})" for y
+    by blast
+  have "\<forall>C\<in>two_chain. (\<lambda>y. measure lebesgue {x. (x, y) \<in> cubeImage C}) \<in> borel_measurable borel"
+    using measurable_cross_section_typeII assms by blast
+  hence sum_measurable:"(\<lambda>y. (\<Sum>C\<in>two_chain. measure lebesgue {x. (x, y) \<in> cubeImage C})) \<in> borel_measurable borel"
+    by(simp add: borel_measurable_sum)
+  have sum_measure_le: "sum (measure lebesgue) ((\<lambda>C. {x. (x, y) \<in> cubeImage C}) ` two_chain) \<le> 
+                        sum (measure lebesgue \<circ> (\<lambda>C. {x. (x, y) \<in> cubeImage C})) two_chain" for y
+   apply(rule sum_image_le)
+    using measure_nonneg sum_image_le \<open>finite two_chain\<close> by auto
+  have "(measure lebesgue) {x. (x,y)\<in>s} \<le>
+        (\<Sum>C\<in>two_chain. measure lebesgue {x. (x, y) \<in> cubeImage C})" for y
+    apply(subst s_section_union)
+    apply(rule xt1(6))
+     defer
+     apply(rule measure_Union_le)  
+    using \<open>finite two_chain\<close> sections_closed borel_closed sets_completionI_sets sum_measure_le
     by auto
-qed
-
-lemma bounded_cross_sections:
-  fixes s::"(real\<times>real) set"
-  assumes "bounded s"
-  shows "bounded {y. (x,y) \<in> s}" "bounded {y. (y,x) \<in> s}"
-proof -
-  have x0: "bounded {(a, b). a = x \<and> (a, b) \<in> s}" for x
-    apply(rule bounded_subset[OF assms])
-    by blast
-  have x1: "{y. (x,y) \<in> s} = snd ` {(a,b). (a = x \<and> (a,b)\<in>s)}" for x
-    by(auto simp add: image_def snd_def)
-  show "bounded {y. (x,y) \<in> s}" for x
-    by(simp only: x0 x1 bounded_snd)
-  have y0: "bounded {(a, b). b = x \<and> (a, b) \<in> s}" for x
-    apply(rule bounded_subset[OF assms])
-    by blast
-  have y1: "{y. (y,x) \<in> s} = fst ` {(a,b). (b = x \<and> (a,b)\<in>s)}" for x
-    by(auto simp add: image_def fst_def)
-  show "bounded {y. (y,x) \<in> s}" for x
-    by(simp only: y0 y1 bounded_fst)
-qed
-
-lemma compact_cross_sections:
-fixes s::"(real\<times>real) set"
-  assumes "compact s"
-  shows "compact {y. (x,y) \<in> s}" "compact {y. (y,x) \<in> s}"
-proof - 
-  show "compact {y. (x,y) \<in> s}"
-    using bounded_cross_sections closed_cross_sections assms compact_eq_bounded_closed
-    by metis
-  show "compact {y. (y,x) \<in> s}"
-    using bounded_cross_sections closed_cross_sections assms compact_eq_bounded_closed
-    by metis
+  have "pairwise (\<lambda>C D. negligible (cubeImage C \<inter> cubeImage D)) (two_chain) \<longrightarrow>
+            finite {y. (measure lebesgue {x. (x, y) \<in> s} \<noteq> 
+                        sum (\<lambda>C. measure lebesgue {x. (x,y) \<in> cubeImage C}) two_chain)}"
+    using \<open>finite two_chain\<close>
+    apply-
+    apply(drule finite_subset_induct'[of two_chain "{x. typeII_twoCube x}"
+              "(\<lambda>F. (pairwise (\<lambda>C D. negligible (cubeImage C \<inter> cubeImage D)) F) \<longrightarrow> 
+                finite {y. measure lebesgue {x. (x, y) \<in> \<Union>(cubeImage ` F)} \<noteq> (\<Sum>C\<in>F. measure lebesgue {x. (x, y) \<in> cubeImage C})})"])
+    using assms apply blast
+      apply simp
+     apply(simp only: symmetric[OF atomize_imp])
+     apply(rule typeII_measure_func_induction)
+    apply(simp)+
+      apply (meson pairwise_insert)
+    apply (metis (no_types, lifting) pairwise_insert)
+    by(simp add: pairwise_negligible_cubeImage assms s_union)
+  thus "(\<lambda>y. measure lebesgue {x. (x, y) \<in> s}) \<in> borel_measurable borel"
+    using borel_measurable_minus_finite sum_measurable
+    by (simp add: pairwise_negligible_cubeImage)
 qed
 
 lemma p_deriv_from_has_p_deriv: assumes "has_partial_vector_derivative F b F' p"
@@ -491,9 +690,11 @@ lemma p_deriv_from_has_p_deriv: assumes "has_partial_vector_derivative F b F' p"
 
 lemma minus_y_analytically_valid:
   fixes s :: "(real\<times>real) set"
-  assumes "compact s" "(\<lambda>x. measure lebesgue {y. (x, y) \<in> s}) \<in> borel_measurable borel" (*this assumption will follow from s have typeI division*)
+  assumes "\<exists>two_chain. valid_typeI_division s two_chain"
   shows "analytically_valid s (\<lambda> x. - snd x) (0,1)"
 proof -
+  have "compact s"
+    using assms typeI_div_compact by blast
   have "has_partial_vector_derivative (\<lambda>x. -snd x) (0, 1) (-1) (a, b)" for a b ::real
     by(auto simp add: has_partial_vector_derivative_def has_vector_derivative_minus)
   hence has_p_deriv: "has_partial_vector_derivative (\<lambda>x. - snd x) (0, 1) (-1) z" for z ::"real\<times>real"
@@ -507,7 +708,7 @@ proof -
     using has_p_deriv p_deriv_from_has_p_deriv by blast
   have integrable: "integrable lborel (\<lambda>p. partial_vector_derivative (\<lambda>x. - snd x) (0, 1) p * indicat_real s p)"
     apply(simp add: p_deriv_minus_1 subst[of "(\<lambda>p. - indicat_real s p)"])
-    using integrable_real_indicator assms
+    using integrable_real_indicator \<open>compact s\<close>
     by (metis borel_compact emeasure_compact_finite sets_lborel)
   have sum_Basis_minus_y: "\<Sum> ({(1::real, 0), (0, 1)} - {(0, 1)}) = (1,0)"
     apply(rule subst[of "{(1,0)}"])
@@ -516,9 +717,9 @@ proof -
     apply(subst indicator_def)+
     by fastforce
   have s\<^sub>x_emb_closed: "closed {y. (x, y) \<in> s}" for x::real
-    by (auto simp add: closed_cross_sections compact_imp_closed assms)
+    by (auto simp add: closed_cross_sections compact_imp_closed \<open>compact s\<close>)
   have "bounded {y. (x, y) \<in> s}" for x::real
-    by (simp add: bounded_cross_sections compact_imp_bounded assms)
+    by (simp add: bounded_cross_sections compact_imp_bounded \<open>compact s\<close>)
   hence "emeasure lborel {y. (x, y) \<in> s} < \<infinity>" for x::real
     using emeasure_bounded_finite by auto
   hence s\<^sub>x_finite_lebesgue: "{y. (x, y) \<in> s} \<in> {A \<in> sets lebesgue. emeasure lebesgue A < \<infinity>}" for x::real
@@ -527,11 +728,13 @@ proof -
               = (\<lambda>x. - integral UNIV (indicat_real {y. (x, y) \<in> s}))"
     apply(simp only: p_deriv_minus_1 real_pair_basis sum_Basis_minus_y scaleR_Pair sym[OF s\<^sub>x_indicat])
     by(auto)
-  have borel_measurable: "(\<lambda>x. integral UNIV (\<lambda>y. partial_vector_derivative (\<lambda>x. - snd x) (0, 1) ((0::real, y) + x *\<^sub>R \<Sum> (Basis - {(0, 1)})) * indicat_real s ((0, y) + x *\<^sub>R \<Sum> (Basis - {(0, 1)})))) \<in> borel_measurable borel"
+  have func_borel: "(\<lambda>x. measure lebesgue {y. (x, y) \<in> s}) \<in> borel_measurable borel"
+    using assms measurable_cross_section_typeI_div by auto
+  hence borel_measurable: "(\<lambda>x. integral UNIV (\<lambda>y. partial_vector_derivative (\<lambda>x. - snd x) (0, 1) ((0::real, y) + x *\<^sub>R \<Sum> (Basis - {(0, 1)})) * indicat_real s ((0, y) + x *\<^sub>R \<Sum> (Basis - {(0, 1)})))) \<in> borel_measurable borel"
     apply(simp add: 4)
     apply(subst sym[OF lmeasure_integral_UNIV])
-    apply(simp only: fmeasurable_def s\<^sub>x_finite_lebesgue)
-    by (auto simp add: assms(2) fmeasurable_def s\<^sub>x_finite_lebesgue)
+     apply(simp only: fmeasurable_def s\<^sub>x_finite_lebesgue)
+    by simp
   show ?thesis
     apply(subst analytically_valid_def)
     by(auto simp add: p_diffble cont_on integrable borel_measurable)
@@ -539,9 +742,11 @@ qed
 
 lemma x_analytically_valid:
   fixes s :: "(real\<times>real) set"
-  assumes "compact s" "(\<lambda>y. measure lebesgue {x. (x, y) \<in> s}) \<in> borel_measurable borel" (*this assumption will follow from s have typeI division*)
+  assumes "\<exists>two_chain. valid_typeII_division s two_chain"
   shows "analytically_valid s (\<lambda> x. fst x) (1,0)"
 proof -
+  have "compact s"
+    using assms typeII_div_compact by blast
   have "has_partial_vector_derivative (\<lambda>x. fst x) (1, 0) (1) (a, b)" for a b ::real
     by(auto simp add: has_partial_vector_derivative_def has_vector_derivative_minus)
   hence has_p_deriv: "has_partial_vector_derivative (\<lambda>x. fst x) (1, 0) (1) z" for z ::"real\<times>real"
@@ -554,7 +759,7 @@ proof -
     using has_p_deriv p_deriv_from_has_p_deriv by blast
   have integrable: "integrable lborel (\<lambda>p. partial_vector_derivative (\<lambda>x. fst x) (1,0) p * indicat_real s p)"
     apply(simp add: p_deriv_minus_1)
-    using integrable_real_indicator assms
+    using integrable_real_indicator \<open>compact s\<close>
     by (metis borel_compact emeasure_compact_finite sets_lborel)
   have sum_Basis_minus_y: "\<Sum> ({(1::real, 0), (0, 1)} - {(1, 0)}) = (0,1)"
     apply(rule subst[of "{(0,1)}"])
@@ -563,9 +768,9 @@ proof -
     apply(subst indicator_def)+
     by fastforce
   have s\<^sub>x_emb_closed: "closed {x. (x, y) \<in> s}" for y::real
-    by (auto simp add: closed_cross_sections compact_imp_closed assms)
+    by (auto simp add: closed_cross_sections compact_imp_closed \<open>compact s\<close>)
   have "bounded {x. (x, y) \<in> s}" for y::real
-    by (simp add: bounded_cross_sections compact_imp_bounded assms)
+    by (simp add: bounded_cross_sections compact_imp_bounded \<open>compact s\<close>)
   hence "emeasure lborel {x. (x, y) \<in> s} < \<infinity>" for y::real
     using emeasure_bounded_finite by auto
   hence s\<^sub>x_finite_lebesgue: "{x. (x, y) \<in> s} \<in> {A \<in> sets lebesgue. emeasure lebesgue A < \<infinity>}" for y::real
@@ -574,11 +779,13 @@ proof -
               = (\<lambda>y. integral UNIV (indicat_real {x. (x, y) \<in> s}))"
     apply(simp only: p_deriv_minus_1 real_pair_basis sum_Basis_minus_y scaleR_Pair sym[OF s\<^sub>x_indicat])
     by(auto)
-  have borel_measurable: "(\<lambda>y. integral UNIV (\<lambda>x. partial_vector_derivative (\<lambda>x. fst x) (1,0) ((x, 0::real) + y *\<^sub>R \<Sum> (Basis - {(1,0)})) * indicat_real s ((x,0) + y *\<^sub>R \<Sum> (Basis - {(1,0)})))) \<in> borel_measurable borel"
+  have func_borel: "(\<lambda>y. measure lebesgue {x. (x, y) \<in> s}) \<in> borel_measurable borel"
+    using assms measurable_cross_section_typeII_div by auto
+  hence borel_measurable: "(\<lambda>y. integral UNIV (\<lambda>x. partial_vector_derivative (\<lambda>x. fst x) (1,0) ((x, 0::real) + y *\<^sub>R \<Sum> (Basis - {(1,0)})) * indicat_real s ((x,0) + y *\<^sub>R \<Sum> (Basis - {(1,0)})))) \<in> borel_measurable borel"
     apply(simp add: 4)
     apply(subst sym[OF lmeasure_integral_UNIV])
-    apply(simp only: fmeasurable_def s\<^sub>x_finite_lebesgue)
-    by (auto simp add: assms(2) fmeasurable_def s\<^sub>x_finite_lebesgue)
+     apply(simp only: fmeasurable_def s\<^sub>x_finite_lebesgue)
+    by simp
   show ?thesis
     apply(subst analytically_valid_def)
     by(auto simp add: p_diffble cont_on integrable borel_measurable)
@@ -830,5 +1037,5 @@ proof -
   thus ?thesis using 0
     by presburger
 qed
-*)
+
 end
