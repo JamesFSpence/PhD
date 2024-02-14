@@ -1,4 +1,4 @@
-ur----TO-DO----
+----TO-DO----
 
 Journal Club - 01/03 - decide on which paper to present
 
@@ -35,4 +35,5 @@ Finish Interval.thy file
 Using twice differentiable version of Green's Theorem that Mohammad intends to formalise
 
 ---- Dirty Proofs ----
-measurable_cross_section_typeI_div
+measurable_cross_section_typeI_div (and typeII analagously)
+typeI_measure_function_induction (and typeII analagously)
