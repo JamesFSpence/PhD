@@ -2,7 +2,12 @@
 
 Journal Club - 01/03 - present RANKING paper
 
-12/02
+19/02
+Read RANKING paper and make notes on it.
+If time, read Trustworthy Graph Algorithms.
+Watch Terence Tao video on Machine Assisted Proofs
+Read graph algorithms chapter Mohammad wrote - Look into formalisations of algorithms
+Write proof of Isoperimetric Theorem using notions in formalisation of Green's Theorem
 
 05/02
 Isoperimetric Deadline - 19/02 - followed by literature review to decide on topic of PhD
@@ -11,22 +16,14 @@ Look at thesis on hybrid systems (sent on Zulip)
 Think about 9 month review by end of April
   - Draft of chapters
   - eg. summary of the problem, definitions, background, literature review
-Read graph algorithms chapter Mohammad wrote - Look into formalisations of algorithms
 
 18/01
 Come up with specification for region and boundary.
   - combine only horiztonal and vertical division and existence of subdivision preconditions with the isoperimetric problem path assumptions (e.g well-parametrised).
 
-03/01
-Look at Green's Theorem proof and try to reconcile it with Isoperimetric Problem.
-
 20/12
 Ask whether I can use my own funding to go to Bonn event - i.e do they have office space
 Apply to LMS funding
-
----- Non urgent tasks ----
-Integral of intervals minus finite number of points are equal - typedef - transfer integrals to this type - Intervals form a semiring_of_sets!
-Finish Interval.thy file
 
 ---- Dirty Proofs ----
 measurable_cross_section_typeI_div (and typeII analagously) (these theorems currently don't have any use)
