@@ -4,8 +4,9 @@ Journal Club - 01/03 - present RANKING paper
 
 19/02
 Read RANKING paper and make notes on it.
-Read graph algorithms chapter Mohammad wrote - Look into formalisations of algorithms
-Write proof of Isoperimetric Theorem using notions in formalisation of Green's Theorem
+Look into time management training.
+Read graph algorithms chapter Mohammad wrote - Look into formalisations of algorithms.
+Write proof of Isoperimetric Theorem using notions in formalisation of Green's Theorem.
 
 05/02
 Isoperimetric Deadline - 19/02 - followed by literature review to decide on topic of PhD
