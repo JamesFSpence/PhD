@@ -1,7 +1,19 @@
 ----TO-DO----
 
+20/03
+Maths/theory:
+Chapters 4, 5, 6 , 8, 9 in the book: https://www.cambridge.org/files/9216/8487/6990/matching_book_pw.pdf
+Paper by Young, which seems to have proofs with possible gaps Young: Social Choice Scoring Functions (1975).pdf
+
+The following online matching algorithms:
+* https://arxiv.org/abs/1904.08255
+* https://dl.acm.org/doi/10.1145/3390890
+
+Formalisation of algo's:
+The formalisation of Arrow's thm and the Gale-Shapley algorithm by Nipkow on the AFP
+The following review paper: https://link.springer.com/chapter/10.1007/978-3-030-59152-6_2
+
 04/03
-Read Chris Dong matching algorithm applied in social welfare paper. (Ask Mohammad which paper as I can#t find it)
 Got through notes on graph algos with Mohammad.
 
 01/03
