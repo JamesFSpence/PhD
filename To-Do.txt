@@ -11,22 +11,19 @@ The following online matching algorithms:
 Formalisation of algo's:
 The formalisation of Arrow's thm and the Gale-Shapley algorithm by Nipkow on the AFP
 The following review paper: https://link.springer.com/chapter/10.1007/978-3-030-59152-6_2
+Look at thesis on hybrid systems (sent on Zulip)
 
 04/03
 Got through notes on graph algos with Mohammad.
 
-01/03
-Ask Mohammad about papers for lit review.
-
 19/02
 Look into time management training.
-Read graph algorithms chapter Mohammad wrote - Look into formalisations of algorithms.
+Look into formalisations of algorithms from graph algos chapter.
 Write proof of Isoperimetric Theorem using notions in formalisation of Green's Theorem.
 
 05/02
 Isoperimetric Deadline - 19/02 - followed by literature review to decide on topic of PhD
 Make list of dirty proofs in to do list
-Look at thesis on hybrid systems (sent on Zulip)
 Think about 9 month review by end of April
   - Draft of chapters
   - eg. summary of the problem, definitions, background, literature review
