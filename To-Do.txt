@@ -2,11 +2,8 @@
 
 20/03
 Maths/theory:
-Chapters 4, 5, 6 , 8, 9 in the book: https://www.cambridge.org/files/9216/8487/6990/matching_book_pw.pdf
+Chapters 5, 6, 8, 9 in the book: https://www.cambridge.org/files/9216/8487/6990/matching_book_pw.pdf
 Paper by Young, which seems to have proofs with possible gaps Young: Social Choice Scoring Functions (1975).pdf
-
-The following online matching algorithms:
-* https://dl.acm.org/doi/10.1145/3390890
 
 Formalisation of algo's:
 The formalisation of Arrow's thm and the Gale-Shapley algorithm by Nipkow on the AFP
